@@ -2,6 +2,7 @@
 
 import pygame
 import os
+from elementos import Punto, PildoraDePoder
 
 ESPACIO_HUD = 50  # Definimos el espacio en la parte superior para el HUD
 
@@ -11,9 +12,10 @@ class PacMan:
         self.velocidad = velocidad
         self.puntuacion = 0
         self.vidas = 3
-        self.frame_actual = 0  # Controla el frame de la animación
-        self.direccion_actual = (1, 0)  # Dirección inicial hacia la derecha
-        self.tamaño_celda = tamaño_celda  # Tamaño de la celda en el mapa
+        self.frame_actual = 0
+        self.direccion_actual = (1, 0)
+        self.tamaño_celda = tamaño_celda
+        self.puntos_recolectados = 0
 
         # Cargar y redimensionar las imágenes de animación desde la carpeta img
         self.imagenes_base = [
@@ -34,12 +36,16 @@ class PacMan:
 
         if not mapa.es_pared(nueva_posicion):
             self.posicion = nueva_posicion
-            self.direccion_actual = direccion  # Actualizamos la dirección actual
+            self.direccion_actual = direccion
 
             # Detectar colisión con objetos en el mapa
             objeto = mapa.obtener_objeto(self.posicion)
             if objeto:
                 self.puntuacion += objeto.valor
+                # Solo aumentar el contador para puntos normales y píldoras de poder
+                from elementos import Punto, PildoraDePoder
+                if isinstance(objeto, (Punto, PildoraDePoder)):
+                    self.puntos_recolectados += 1
                 mapa.eliminar_objeto(self.posicion)
 
     def dibujar(self, pantalla):
