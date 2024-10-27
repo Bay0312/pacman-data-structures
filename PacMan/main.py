@@ -5,8 +5,8 @@ from mapa import Mapa
 from pacman import PacMan
 
 # Tamaño de la ventana ajustado para incluir espacio para la puntuación y vidas en la parte superior
-ANCHO_VENTANA = 838
-ALTO_VENTANA = 640  # Espacio extra en la parte superior para el HUD (puntuación y vidas)
+ANCHO_VENTANA = 839
+ALTO_VENTANA = 641  # Espacio extra en la parte superior para el HUD (puntuación y vidas)
 ESPACIO_HUD = 50  # Altura reservada para el HUD
 
 pygame.init()
@@ -16,8 +16,12 @@ pygame.display.set_caption("Pac-Man")
 COLOR_FONDO = (0, 0, 0)
 fuente = pygame.font.Font(None, 36)
 
+# Inicializar el mapa y obtener el tamaño de la celda
 mapa = Mapa()
-pacman = PacMan(posicion=(1, 1))
+TAMAÑO_CELDA = 31  # Ajusta este valor al tamaño de celda de tu mapa
+
+# Inicializar Pac-Man con el tamaño de la celda
+pacman = PacMan(posicion=(1, 1), tamaño_celda=TAMAÑO_CELDA)
 
 jugando = True
 reloj = pygame.time.Clock()
