@@ -1,4 +1,3 @@
-# config.py
 import os
 
 # Colores
@@ -6,8 +5,9 @@ COLOR_FONDO = (0, 0, 0)
 COLOR_PUNTO = (255, 255, 255)  # Blanco para puntos
 COLOR_PILDORA = (255, 255, 255)  # Blanco para píldoras
 COLOR_PARED = (0, 0, 255)  # Azul para paredes
-COLOR_TEXTO = (255, 255, 255)  # Blanco para textos
+COLOR_TEXTO = (255, 247, 0, 255)  # Blanco para textos
 COLOR_VICTORIA = (255, 255, 0)  # Amarillo para mensaje de victoria
+GROSOR_BORDE = 4  # Grosor del borde de las paredes
 
 # Dimensiones de pantalla
 ANCHO_VENTANA = 839
@@ -15,7 +15,7 @@ ALTO_VENTANA = 641
 ESPACIO_HUD = 50
 
 # Tamaño de las celdas en el mapa
-TAMAÑO_CELDA = 31
+TAMANIO_CELDA = 31
 
 # Temporización
 TIEMPO_INICIO_JUEGO = 3  # Segundos para el mensaje "Ready"

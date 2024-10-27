@@ -1,28 +1,26 @@
-# pacman.py
-
 import pygame
-import os
-from elementos import Punto, PildoraDePoder
+from config import *
 
 ESPACIO_HUD = 50  # Definimos el espacio en la parte superior para el HUD
 
+
 class PacMan:
-    def __init__(self, posicion, tamaño_celda, velocidad=1):
+    def __init__(self, posicion, tamanio_celda, velocidad=1):
         self.posicion = posicion
         self.velocidad = velocidad
         self.puntuacion = 0
         self.vidas = 3
         self.frame_actual = 0
         self.direccion_actual = (1, 0)
-        self.tamaño_celda = tamaño_celda
+        self.tamanio_celda = tamanio_celda
         self.puntos_recolectados = 0
 
         # Cargar y redimensionar las imágenes de animación desde la carpeta img
         self.imagenes_base = [
             pygame.transform.scale(
-                pygame.image.load(os.path.join("img", f"Pacman{i}.png")).convert_alpha(),
-                (self.tamaño_celda, self.tamaño_celda)
-            ) for i in range(1, 5)
+                pygame.image.load(ruta).convert_alpha(),
+                (self.tamanio_celda, self.tamanio_celda)
+            ) for ruta in RUTA_IMAGEN_PACMAN  # Usamos las rutas desde config.py
         ]
 
     def mover(self, direccion, mapa):
@@ -49,8 +47,8 @@ class PacMan:
                 mapa.eliminar_objeto(self.posicion)
 
     def dibujar(self, pantalla):
-        x_pix = self.posicion[0] * self.tamaño_celda + self.tamaño_celda // 2
-        y_pix = self.posicion[1] * self.tamaño_celda + self.tamaño_celda // 2 + ESPACIO_HUD
+        x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
+        y_pix = self.posicion[1] * self.tamanio_celda + self.tamanio_celda // 2 + ESPACIO_HUD
 
         # Alternar imágenes para el efecto de "masticado"
         imagen_base = self.imagenes_base[self.frame_actual]
@@ -67,4 +65,4 @@ class PacMan:
             imagen_pacman = pygame.transform.rotate(imagen_base, -90)
 
         # Dibujar la imagen en la posición de Pac-Man
-        pantalla.blit(imagen_pacman, (x_pix - self.tamaño_celda // 2, y_pix - self.tamaño_celda // 2))
+        pantalla.blit(imagen_pacman, (x_pix - self.tamanio_celda // 2, y_pix - self.tamanio_celda // 2))

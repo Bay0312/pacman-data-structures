@@ -1,4 +1,3 @@
-# principal.py
 import pygame
 from mapa import Mapa
 from pacman import PacMan
@@ -14,22 +13,22 @@ class JuegoPacman:
 
         # Fuentes
         self.fuente_grande = pygame.font.Font(None, 74)
-        self.fuente_pequeña = pygame.font.Font(None, 36)
+        self.fuente_pequenia = pygame.font.Font(None, 36)
 
         self.reiniciar_juego()
 
     def reiniciar_juego(self):
         self.mapa = Mapa()
-        self.TAMAÑO_CELDA = TAMAÑO_CELDA
-        self.pacman = PacMan(posicion=(1, 1), tamaño_celda=self.TAMAÑO_CELDA)
+        self.TAMANIO_CELDA = TAMANIO_CELDA
+        self.pacman = PacMan(posicion=(1, 1), tamanio_celda=self.TAMANIO_CELDA)
         self.contador_fruta = 0
         self.estado = EstadoJuego.PREPARADO
         self.tiempo_inicio = time.time()
         self.puntos_totales = self.mapa.contar_puntos_iniciales()
         self.puntos_recolectados = 0
 
-    def mostrar_mensaje(self, texto, y_offset=0, tamaño_grande=True):
-        fuente = self.fuente_grande if tamaño_grande else self.fuente_pequeña
+    def mostrar_mensaje(self, texto, y_offset=0, tamanio_grande=True):
+        fuente = self.fuente_grande if tamanio_grande else self.fuente_pequenia
         texto_surface = fuente.render(texto, True, COLOR_TEXTO)
         texto_rect = texto_surface.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2 + y_offset))
         self.pantalla.blit(texto_surface, texto_rect)
@@ -61,7 +60,7 @@ class JuegoPacman:
 
     def dibujar_juego(self):
         self.pantalla.fill(COLOR_FONDO)
-        texto = self.fuente_pequeña.render(
+        texto = self.fuente_pequenia.render(
             f"Puntuación: {self.pacman.puntuacion}   Vidas: {self.pacman.vidas}",
             True, COLOR_TEXTO
         )
