@@ -1,6 +1,7 @@
 import pygame
 from mapa import Mapa
 from pacman import PacMan
+from pinky import Pinky  # Importar la clase Pinky
 import time
 from config import *
 
@@ -21,11 +22,13 @@ class JuegoPacman:
         self.mapa = Mapa()
         self.TAMANIO_CELDA = TAMANIO_CELDA
         self.pacman = PacMan(posicion=(1, 1), tamanio_celda=self.TAMANIO_CELDA)
+        self.pinky = Pinky(self.mapa, self.TAMANIO_CELDA, posicion_inicial=(5, 5))
         self.contador_fruta = 0
         self.estado = EstadoJuego.PREPARADO
         self.tiempo_inicio = time.time()
         self.puntos_totales = self.mapa.contar_puntos_iniciales()
         self.puntos_recolectados = 0
+
 
     def mostrar_mensaje(self, texto, y_offset=0, tamanio_grande=True):
         fuente = self.fuente_grande if tamanio_grande else self.fuente_pequenia
@@ -68,6 +71,7 @@ class JuegoPacman:
 
         self.mapa.dibujar(self.pantalla)
         self.pacman.dibujar(self.pantalla)
+        self.pinky.dibujar(self.pantalla)
 
         # Mostrar mensajes según el estado
         if self.estado == EstadoJuego.PREPARADO:
@@ -75,6 +79,9 @@ class JuegoPacman:
         elif self.estado == EstadoJuego.VICTORIA:
             self.mostrar_mensaje("¡VICTORIA!", -40)
             self.mostrar_mensaje("Presiona ENTER para jugar de nuevo", 40, False)
+        elif self.pacman.vidas <= 0:
+            self.pacman.mostrar_mensaje(self.pantalla, "¡Has Perdido!", self.fuente_grande, self.fuente_pequenia, COLOR_TEXTO, True)
+
 
     def ejecutar(self):
         jugando = True
@@ -100,11 +107,18 @@ class JuegoPacman:
                     self.mapa.generar_fruta_aleatoria()
                     self.contador_fruta = 0
 
+            # Mover a Pinky solo una celda cada vez que se presiona una tecla
+            if movimiento:  # Si se presiona una tecla para mover a PacMan
+                self.pinky.mover(self.pacman, self.mapa)
+
+            self.pinky.verificar_colision_con_pacman(self.pacman)
+
             self.dibujar_juego()
             pygame.display.flip()
             reloj.tick(FPS)
 
         pygame.quit()
+
 
 
 if __name__ == "__main__":

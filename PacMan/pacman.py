@@ -6,6 +6,7 @@ ESPACIO_HUD = 50  # Definimos el espacio en la parte superior para el HUD
 
 class PacMan:
     def __init__(self, posicion, tamanio_celda, velocidad=1):
+        self.posicion_inicial = posicion
         self.posicion = posicion
         self.velocidad = velocidad
         self.puntuacion = 0
@@ -20,7 +21,7 @@ class PacMan:
             pygame.transform.scale(
                 pygame.image.load(ruta).convert_alpha(),
                 (self.tamanio_celda, self.tamanio_celda)
-            ) for ruta in RUTA_IMAGEN_PACMAN  # Usamos las rutas desde config.py
+            ) for ruta in RUTA_IMAGEN_PACMAN
         ]
 
     def mover(self, direccion, mapa):
@@ -66,3 +67,16 @@ class PacMan:
 
         # Dibujar la imagen en la posición de Pac-Man
         pantalla.blit(imagen_pacman, (x_pix - self.tamanio_celda // 2, y_pix - self.tamanio_celda // 2))
+
+    def perder_vida(self):
+        self.vidas -= 1
+        self.restablecer_posicion()
+
+    def mostrar_mensaje(self, pantalla, texto, fuente_grande, fuente_pequenia, color_texto, tamanio_grande=True):
+        fuente = fuente_grande if tamanio_grande else fuente_pequenia
+        texto_surface = fuente.render(texto, True, color_texto)
+        texto_rect = texto_surface.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2))
+        pantalla.blit(texto_surface, texto_rect)
+
+    def restablecer_posicion(self):
+        self.posicion = self.posicion_inicial
