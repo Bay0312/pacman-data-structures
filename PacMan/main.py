@@ -41,6 +41,13 @@ class JuegoPacman:
         if self.puntos_recolectados >= self.puntos_totales:
             self.estado = EstadoJuego.VICTORIA
 
+        if self.pacman.vidas == 0:
+            self.estado = EstadoJuego.DERROTA
+        
+        # Cambiar la llamada aquí para pasar activar_modo_frightened
+        if self.pacman.recoger_pildora_poder(self.mapa, self.activar_modo_frightened):
+            self.activar_modo_frightened(duracion=5000)
+
     def manejar_eventos(self):
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
@@ -84,6 +91,10 @@ class JuegoPacman:
         elif self.pacman.vidas <= 0:
             self.pacman.mostrar_mensaje(self.pantalla, "¡Has Perdido!", self.fuente_grande, self.fuente_pequenia, COLOR_TEXTO, True)
 
+    def activar_modo_frightened(self, duracion=300):
+        duracion = 7000
+        self.pinky.activar_frightened(duracion)
+        self.clyde.activar_frightened(duracion)
 
     def ejecutar(self):
         jugando = True
@@ -99,7 +110,7 @@ class JuegoPacman:
 
             # Mover PacMan solo si hay movimiento detectado
             if self.estado == EstadoJuego.JUGANDO and movimiento:
-                self.pacman.mover(movimiento, self.mapa)
+                self.pacman.mover(movimiento, self.mapa, self.activar_modo_frightened)
                 self.puntos_recolectados = self.pacman.puntos_recolectados
                 self.actualizar_estado()
 

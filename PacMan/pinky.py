@@ -11,6 +11,11 @@ class Pinky:
         self.frame_actual = 0
         self.intervalo_movimiento = intervalo_movimiento
         self.ciclos_movimiento = 0
+
+        # Para frightened
+        self.estado_frightened = False
+        self.tiempo_frightened = 0
+        self.duracion_frightened = 300
         
         # Calcular el centro del mapa
         centro_x = mapa.num_columnas // 2
@@ -29,37 +34,39 @@ class Pinky:
         ]
 
     def restablecer_posicion(self):
-        """Restablece la posición de Pinky a su posición inicial."""
         self.posicion = self.posicion_inicial
 
     def predecir_posicion_pacman(self, pacman):
-        """Calcula una posición futura de Pac-Man en base a su dirección actual."""
         prediccion_x = pacman.posicion[0] + pacman.direccion_actual[0] * 4
         prediccion_y = pacman.posicion[1] + pacman.direccion_actual[1] * 4
         return (prediccion_x, prediccion_y)
 
     def mover(self, pacman, mapa):
-        """Movimientos de Pinky para perseguir a PacMan."""
         self.ciclos_movimiento += 1
-        
-        # Verificar intervalo de movimiento
+
         if self.ciclos_movimiento < self.intervalo_movimiento:
             return
 
         self.ciclos_movimiento = 0
 
-        # AI para predecir movimiento
+        # Frightened
+        if self.estado_frightened:
+            print("Frightened")
+            self.mover_aleatoriamente(mapa)
+            
+            tiempo_actual = pygame.time.get_ticks()
+            if tiempo_actual - self.inicio_frightened >= self.duracion_frightened:
+                self.desactivar_frightened()
+            return
+
         objetivo = self.predecir_posicion_pacman(pacman)
 
-        # Calcular dirección hacia el objetivo
         direccion_x = 1 if objetivo[0] > self.posicion[0] else -1 if objetivo[0] < self.posicion[0] else 0
         direccion_y = 1 if objetivo[1] > self.posicion[1] else -1 if objetivo[1] < self.posicion[1] else 0
 
-        # Generar direcciones posibles
         posibles_direcciones = [(direccion_x, 0), (0, direccion_y), (direccion_x, direccion_y)]
         random.shuffle(posibles_direcciones)
 
-        # Intentar moverse en una de las direcciones posibles
         for direccion in posibles_direcciones:
             nueva_posicion = (self.posicion[0] + direccion[0], self.posicion[1] + direccion[1])
             if not mapa.es_pared(nueva_posicion):
@@ -68,13 +75,11 @@ class Pinky:
                 break
 
     def verificar_colision_con_pacman(self, pacman):
-        """Verificar si Pinky colisiona con PacMan."""
         if self.posicion == pacman.posicion:
             pacman.perder_vida()
             self.restablecer_posicion()
 
     def dibujar(self, pantalla):
-        """Dibujar a Pinky en la pantalla."""
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
         y_pix = self.posicion[1] * self.tamanio_celda + self.tamanio_celda // 2 + ESPACIO_HUD
 
@@ -82,3 +87,23 @@ class Pinky:
         self.frame_actual = (self.frame_actual + 1) % len(self.imagenes_base)
 
         pantalla.blit(imagen_base, (x_pix - self.tamanio_celda // 2, y_pix - self.tamanio_celda // 2))
+    
+    def activar_frightened(self, duracion):
+        self.estado_frightened = True
+        self.duracion_frightened = duracion
+        self.inicio_frightened = pygame.time.get_ticks()
+
+    def desactivar_frightened(self):
+        self.estado_frightened = False
+
+    # Ayuda de IA para sacar direcciones
+    def mover_aleatoriamente(self, mapa):
+        direcciones = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        random.shuffle(direcciones)
+
+        for direccion in direcciones:
+            nueva_posicion = (self.posicion[0] + direccion[0], self.posicion[1] + direccion[1])
+            if not mapa.es_pared(nueva_posicion):
+                self.posicion = nueva_posicion
+                self.direccion_actual = direccion
+                break

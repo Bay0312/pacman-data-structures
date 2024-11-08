@@ -24,7 +24,7 @@ class PacMan:
             ) for ruta in RUTA_IMAGEN_PACMAN
         ]
 
-    def mover(self, direccion, mapa):
+    def mover(self, direccion, mapa, activar_frightened_callback):
         nueva_posicion = (self.posicion[0] + direccion[0], self.posicion[1] + direccion[1])
 
         num_columnas = mapa.num_columnas
@@ -37,13 +37,14 @@ class PacMan:
             self.posicion = nueva_posicion
             self.direccion_actual = direccion
 
-            # Detectar colisión con objetos en el mapa
             objeto = mapa.obtener_objeto(self.posicion)
             if objeto:
                 self.puntuacion += objeto.valor
-                # Solo aumentar el contador para puntos normales y píldoras de poder
                 if isinstance(objeto, (Punto, PildoraDePoder)):
                     self.puntos_recolectados += 1
+                if isinstance(objeto, PildoraDePoder):
+                    # Llamar al método de PacMan para activar el frightened
+                    self.activar_frightened_callback(activar_frightened_callback)
                 mapa.eliminar_objeto(self.posicion)
 
     def dibujar(self, pantalla):
@@ -79,3 +80,15 @@ class PacMan:
 
     def restablecer_posicion(self):
         self.posicion = self.posicion_inicial
+
+    def activar_frightened_callback(self, callback, duracion=300):
+        if callback:
+            callback(duracion)
+
+    def recoger_pildora_poder(self, mapa, activar_modo_frightened):
+        objeto = mapa.obtener_objeto(self.posicion)
+        if isinstance(objeto, PildoraDePoder):
+            activar_modo_frightened(duracion=5000)  # Llamar a la función que activa el modo frightened
+            mapa.eliminar_objeto(self.posicion)  # Eliminar la píldora de poder del mapa
+            return True
+        return False

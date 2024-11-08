@@ -11,8 +11,12 @@ class Clyde:
         self.frame_actual = 0
         self.intervalo_movimiento = intervalo_movimiento
         self.ciclos_movimiento = 0
+
+        # Para frightened
+        self.estado_frightened = False
+        self.tiempo_frightened = 0
+        self.duracion_frightened = 300
         
-        # Calcular el centro del mapa
         centro_x = mapa.num_columnas // 2
         centro_y = mapa.num_filas // 2
 
@@ -20,7 +24,6 @@ class Clyde:
         self.posicion_inicial = (centro_x - 1, centro_y)
         self.posicion = self.posicion_inicial
 
-        # Cargar imágenes de Clyde
         self.imagenes_base = [
             pygame.transform.scale(
                 pygame.image.load(ruta).convert_alpha(),
@@ -42,10 +45,20 @@ class Clyde:
 
     def mover(self, pacman, mapa):
         self.ciclos_movimiento += 1
+        
         if self.ciclos_movimiento < self.intervalo_movimiento:
             return
         
         self.ciclos_movimiento = 0
+        
+        # Modo frightened
+        if self.estado_frightened:
+            self.mover_aleatoriamente(mapa)
+            
+            tiempo_actual = pygame.time.get_ticks()
+            if tiempo_actual - self.inicio_frightened >= self.duracion_frightened:
+                self.desactivar_frightened()
+            return
 
         pos_pacman = pacman.posicion
         distancia_x = abs(self.posicion[0] - pos_pacman[0])
@@ -113,7 +126,27 @@ class Clyde:
             self.direccion = random.choice(opciones)
 
     def verificar_colision_con_pacman(self, pacman):
-        """Verifica si Clyde colisiona con PacMan."""
         if self.posicion == pacman.posicion:
             pacman.perder_vida()
             self.restablecer_posicion()
+
+    def activar_frightened(self, duracion):
+        self.estado_frightened = True
+        self.duracion_frightened = duracion
+        self.inicio_frightened = pygame.time.get_ticks()
+
+    def desactivar_frightened(self):
+        self.estado_frightened = False
+        self.tiempo_frightened = 0
+
+    # Ayuda de IA para sacar direcciones
+    def mover_aleatoriamente(self, mapa):
+        direcciones = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        random.shuffle(direcciones)
+
+        for direccion in direcciones:
+            nueva_posicion = (self.posicion[0] + direccion[0], self.posicion[1] + direccion[1])
+            if not mapa.es_pared(nueva_posicion):
+                self.posicion = nueva_posicion
+                self.direccion_actual = direccion
+                break
