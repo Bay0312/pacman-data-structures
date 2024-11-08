@@ -1,6 +1,7 @@
 import pygame
 import random
 from config import *
+import os
 
 class Clyde:
     def __init__(self, mapa, tamanio_celda, intervalo_movimiento=1):
@@ -24,12 +25,23 @@ class Clyde:
         self.posicion_inicial = (centro_x - 1, centro_y)
         self.posicion = self.posicion_inicial
 
+        # Cargar imágenes de Clyde
         self.imagenes_base = [
             pygame.transform.scale(
                 pygame.image.load(ruta).convert_alpha(),
                 (self.tamanio_celda, self.tamanio_celda)
             ) for ruta in RUTA_IMAGEN_CLYDE
         ]
+        
+        # Imagen para estado frightened
+        if os.path.exists(RUTA_IMAGEN_ASUSTADO):  # Verificar que la ruta sea correcta
+            self.imagen_frightened = pygame.transform.scale(
+                pygame.image.load(RUTA_IMAGEN_ASUSTADO).convert_alpha(),
+                (self.tamanio_celda, self.tamanio_celda)
+            )
+        else:
+            print("Error: No se encontró la imagen asustada de Clyde.")
+            self.imagen_frightened = None
 
     def restablecer_posicion(self):
         self.posicion = self.posicion_inicial
@@ -38,10 +50,19 @@ class Clyde:
         x_pix = self.posicion[0] * self.tamanio_celda
         y_pix = self.posicion[1] * self.tamanio_celda + ESPACIO_HUD
 
-        imagen_base = self.imagenes_base[self.frame_actual]
+        if self.estado_frightened:
+            if self.imagen_frightened:
+                imagen_base = self.imagen_frightened
+            else:
+                print("Error: No se cargó la imagen asustada de Clyde.")
+                imagen_base = self.imagenes_base[self.frame_actual]  # Usar la imagen base predeterminada
+        else:
+            imagen_base = self.imagenes_base[self.frame_actual]
+
         self.frame_actual = (self.frame_actual + 1) % len(self.imagenes_base)
 
         pantalla.blit(imagen_base, (x_pix, y_pix))
+
 
     def mover(self, pacman, mapa):
         self.ciclos_movimiento += 1
@@ -107,7 +128,6 @@ class Clyde:
     def calcular_distancia(self, pos1, pos2):
         """Calcula la distancia de Manhattan entre dos posiciones."""
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
-
 
     def alejarse_de_pacman(self, pos_pacman, mapa):
         opciones = []

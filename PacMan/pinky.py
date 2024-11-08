@@ -25,14 +25,24 @@ class Pinky:
         self.posicion_inicial = (centro_x + 1, centro_y)
         self.posicion = self.posicion_inicial
 
-        # Cargar imágenes de Pinky
+        # Cargar imágenes de Pinky (normales y asustadas)
         self.imagenes_base = [
             pygame.transform.scale(
                 pygame.image.load(ruta).convert_alpha(),
                 (self.tamanio_celda, self.tamanio_celda)
             ) for ruta in RUTA_IMAGEN_PINKY
         ]
-
+        
+        # Cargar imágenes asustado
+        if os.path.exists(RUTA_IMAGEN_ASUSTADO):  # Verificar que la ruta sea correcta
+            self.imagen_frightened = pygame.transform.scale(
+                pygame.image.load(RUTA_IMAGEN_ASUSTADO).convert_alpha(),
+                (self.tamanio_celda, self.tamanio_celda)
+            )
+        else:
+            print("Error: No se encontró la imagen asustada de Clyde.")
+            self.imagen_frightened = None
+    
     def restablecer_posicion(self):
         self.posicion = self.posicion_inicial
 
@@ -51,7 +61,6 @@ class Pinky:
 
         # Frightened
         if self.estado_frightened:
-            print("Frightened")
             self.mover_aleatoriamente(mapa)
             
             tiempo_actual = pygame.time.get_ticks()
@@ -83,7 +92,12 @@ class Pinky:
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
         y_pix = self.posicion[1] * self.tamanio_celda + self.tamanio_celda // 2 + ESPACIO_HUD
 
-        imagen_base = self.imagenes_base[self.frame_actual]
+        # Usar imagen de estado asustado si está activado
+        if self.estado_frightened:
+            imagen_base = self.imagen_frightened  # Solo una imagen, no un índice
+        else:
+            imagen_base = self.imagenes_base[self.frame_actual]
+        
         self.frame_actual = (self.frame_actual + 1) % len(self.imagenes_base)
 
         pantalla.blit(imagen_base, (x_pix - self.tamanio_celda // 2, y_pix - self.tamanio_celda // 2))
