@@ -95,7 +95,8 @@ class JuegoPacman:
                 if time.time() - self.tiempo_inicio >= TIEMPO_INICIO_JUEGO:
                     self.estado = EstadoJuego.JUGANDO
 
-            elif self.estado == EstadoJuego.JUGANDO and movimiento:
+            # Mover PacMan solo si hay movimiento detectado
+            if self.estado == EstadoJuego.JUGANDO and movimiento:
                 self.pacman.mover(movimiento, self.mapa)
                 self.puntos_recolectados = self.pacman.puntos_recolectados
                 self.actualizar_estado()
@@ -107,17 +108,19 @@ class JuegoPacman:
                     self.mapa.generar_fruta_aleatoria()
                     self.contador_fruta = 0
 
-            # Mover a Pinky solo una celda cada vez que se presiona una tecla
-            if movimiento:  # Si se presiona una tecla para mover a PacMan
-                self.pinky.mover(self.pacman, self.mapa)
+                if self.contador_fruta % 2 == 0:  # Pinky se moverá cada 2 ciclos de juego
+                    self.pinky.mover(self.pacman, self.mapa)
 
-            self.pinky.verificar_colision_con_pacman(self.pacman)
+                # Verificar colisión entre Pinky y PacMan
+                self.pinky.verificar_colision_con_pacman(self.pacman)
 
+            # Dibujar el estado actual del juego
             self.dibujar_juego()
             pygame.display.flip()
             reloj.tick(FPS)
 
         pygame.quit()
+
 
 
 
