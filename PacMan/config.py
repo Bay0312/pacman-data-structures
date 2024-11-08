@@ -35,7 +35,4 @@ class EstadoJuego:
 RUTA_IMAGEN_CEREZA = os.path.join("img", "Cereza.png")
 RUTA_IMAGEN_PACMAN = [os.path.join("img", f"Pacman{i}.png") for i in range(1, 5)]
 RUTA_IMAGEN_PINKY = [os.path.join("Fantasmas", "Pinky", f"Pinky{i}.png") for i in range(1, 3)]
-"""
-RUTA_IMAGEN_PINKY1 = os.path.join("Fantasmas", "Pinky", "Pinky1.png")
-RUTA_IMAGEN_PINKY2 = os.path.join("Fantasmas", "Pinky", "Pinky2.png")
-"""
+RUTA_IMAGEN_CLYDE = [os.path.join("Fantasmas", "Clyde", f"Clyde{i}.png") for i in range(1, 3)]

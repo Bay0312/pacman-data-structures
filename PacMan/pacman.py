@@ -1,8 +1,8 @@
 import pygame
 from config import *
+from elementos import Punto, PildoraDePoder
 
-ESPACIO_HUD = 50  # Definimos el espacio en la parte superior para el HUD
-
+ESPACIO_HUD = 50
 
 class PacMan:
     def __init__(self, posicion, tamanio_celda, velocidad=1):
@@ -42,7 +42,6 @@ class PacMan:
             if objeto:
                 self.puntuacion += objeto.valor
                 # Solo aumentar el contador para puntos normales y píldoras de poder
-                from elementos import Punto, PildoraDePoder
                 if isinstance(objeto, (Punto, PildoraDePoder)):
                     self.puntos_recolectados += 1
                 mapa.eliminar_objeto(self.posicion)

@@ -1,10 +1,10 @@
 import pygame
 from mapa import Mapa
 from pacman import PacMan
-from pinky import Pinky  # Importar la clase Pinky
+from pinky import Pinky
+from clyde import Clyde
 import time
 from config import *
-
 
 class JuegoPacman:
     def __init__(self):
@@ -22,7 +22,8 @@ class JuegoPacman:
         self.mapa = Mapa()
         self.TAMANIO_CELDA = TAMANIO_CELDA
         self.pacman = PacMan(posicion=(1, 1), tamanio_celda=self.TAMANIO_CELDA)
-        self.pinky = Pinky(self.mapa, self.TAMANIO_CELDA, posicion_inicial=(5, 5))
+        self.pinky = Pinky(self.mapa, self.TAMANIO_CELDA)
+        self.clyde = Clyde(self.mapa, self.TAMANIO_CELDA)
         self.contador_fruta = 0
         self.estado = EstadoJuego.PREPARADO
         self.tiempo_inicio = time.time()
@@ -72,6 +73,7 @@ class JuegoPacman:
         self.mapa.dibujar(self.pantalla)
         self.pacman.dibujar(self.pantalla)
         self.pinky.dibujar(self.pantalla)
+        self.clyde.dibujar(self.pantalla)
 
         # Mostrar mensajes según el estado
         if self.estado == EstadoJuego.PREPARADO:
@@ -108,11 +110,13 @@ class JuegoPacman:
                     self.mapa.generar_fruta_aleatoria()
                     self.contador_fruta = 0
 
-                if self.contador_fruta % 2 == 0:  # Pinky se moverá cada 2 ciclos de juego
+                if self.contador_fruta % 2 == 0:
                     self.pinky.mover(self.pacman, self.mapa)
+                    self.clyde.mover(self.pacman, self.mapa)
 
-                # Verificar colisión entre Pinky y PacMan
+                # Verificar colisión entre los fantasmas y PacMan
                 self.pinky.verificar_colision_con_pacman(self.pacman)
+                self.clyde.verificar_colision_con_pacman(self.pacman)
 
             # Dibujar el estado actual del juego
             self.dibujar_juego()
@@ -120,9 +124,6 @@ class JuegoPacman:
             reloj.tick(FPS)
 
         pygame.quit()
-
-
-
 
 if __name__ == "__main__":
     juego = JuegoPacman()
