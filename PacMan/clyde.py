@@ -126,7 +126,6 @@ class Clyde:
             self.direccion = mejor_opcion
 
     def calcular_distancia(self, pos1, pos2):
-        """Calcula la distancia de Manhattan entre dos posiciones."""
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
     def alejarse_de_pacman(self, pos_pacman, mapa):
@@ -158,6 +157,7 @@ class Clyde:
     def desactivar_frightened(self):
         self.estado_frightened = False
         self.tiempo_frightened = 0
+        self.frame_actual = 0
 
     # Ayuda de IA para sacar direcciones
     def mover_aleatoriamente(self, mapa):

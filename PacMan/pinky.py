@@ -40,7 +40,7 @@ class Pinky:
                 (self.tamanio_celda, self.tamanio_celda)
             )
         else:
-            print("Error: No se encontró la imagen asustada de Clyde.")
+            print("Error: No se encontró la imagen asustada de Pinky.")
             self.imagen_frightened = None
     
     def restablecer_posicion(self):

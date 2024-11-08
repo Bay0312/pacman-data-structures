@@ -24,12 +24,15 @@ class JuegoPacman:
         self.pacman = PacMan(posicion=(1, 1), tamanio_celda=self.TAMANIO_CELDA)
         self.pinky = Pinky(self.mapa, self.TAMANIO_CELDA)
         self.clyde = Clyde(self.mapa, self.TAMANIO_CELDA)
+        
+        # Crear la lista de fantasmas
+        self.fantasmas = [self.pinky, self.clyde]
+        
         self.contador_fruta = 0
         self.estado = EstadoJuego.PREPARADO
         self.tiempo_inicio = time.time()
         self.puntos_totales = self.mapa.contar_puntos_iniciales()
         self.puntos_recolectados = 0
-
 
     def mostrar_mensaje(self, texto, y_offset=0, tamanio_grande=True):
         fuente = self.fuente_grande if tamanio_grande else self.fuente_pequenia
@@ -110,7 +113,8 @@ class JuegoPacman:
 
             # Mover PacMan solo si hay movimiento detectado
             if self.estado == EstadoJuego.JUGANDO and movimiento:
-                self.pacman.mover(movimiento, self.mapa, self.activar_modo_frightened)
+                # Pasar la lista de fantasmas al método mover
+                self.pacman.mover(movimiento, self.mapa, self.activar_modo_frightened, self.fantasmas)
                 self.puntos_recolectados = self.pacman.puntos_recolectados
                 self.actualizar_estado()
 

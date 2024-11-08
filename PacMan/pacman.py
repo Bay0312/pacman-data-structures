@@ -15,6 +15,10 @@ class PacMan:
         self.direccion_actual = (1, 0)
         self.tamanio_celda = tamanio_celda
         self.puntos_recolectados = 0
+        self.fantasmas_comidos = 0
+
+        self.estado_frightened = False
+        self.duracion_frightened = 0 
 
         # Cargar y redimensionar las imágenes de animación desde la carpeta img
         self.imagenes_base = [
@@ -24,7 +28,7 @@ class PacMan:
             ) for ruta in RUTA_IMAGEN_PACMAN
         ]
 
-    def mover(self, direccion, mapa, activar_frightened_callback):
+    def mover(self, direccion, mapa, activar_frightened_callback, fantasmas):
         nueva_posicion = (self.posicion[0] + direccion[0], self.posicion[1] + direccion[1])
 
         num_columnas = mapa.num_columnas
@@ -36,6 +40,20 @@ class PacMan:
         if not mapa.es_pared(nueva_posicion):
             self.posicion = nueva_posicion
             self.direccion_actual = direccion
+
+            # Verificar si PacMan toca un fantasma
+            for fantasma in fantasmas:
+                if self.posicion == fantasma.posicion:
+                    if self.estado_frightened:
+                        puntos = 200 * (2 ** self.fantasmas_comidos)
+                        self.puntuacion += puntos
+                        self.fantasmas_comidos += 1
+                        fantasma.restablecer_posicion()
+                        fantasma.estado_frightened = False
+                        #self.estado_frightened = False
+                    else:
+                        self.perder_vida()
+                    break
 
             objeto = mapa.obtener_objeto(self.posicion)
             if objeto:
@@ -82,6 +100,9 @@ class PacMan:
         self.posicion = self.posicion_inicial
 
     def activar_frightened_callback(self, callback, duracion=300):
+        self.estado_frightened = True
+        self.duracion_frightened = pygame.time.get_ticks() + duracion
+
         if callback:
             callback(duracion)
 
@@ -92,3 +113,7 @@ class PacMan:
             mapa.eliminar_objeto(self.posicion)  # Eliminar la píldora de poder del mapa
             return True
         return False
+    
+    def actualizar_estado_frightened(self):
+        if self.estado_frightened and pygame.time.get_ticks() > self.duracion_frightened:
+            self.estado_frightened = False
