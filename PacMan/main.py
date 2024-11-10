@@ -1,8 +1,10 @@
 import pygame
 from mapa import Mapa
 from pacman import PacMan
+from blinky import Blinky
 from pinky import Pinky
 from clyde import Clyde
+from inky import Inky
 import time
 from config import *
 
@@ -22,11 +24,14 @@ class JuegoPacman:
         self.mapa = Mapa()
         self.TAMANIO_CELDA = TAMANIO_CELDA
         self.pacman = PacMan(posicion=(1, 1), tamanio_celda=self.TAMANIO_CELDA)
-        self.pinky = Pinky(self.mapa, self.TAMANIO_CELDA)
-        self.clyde = Clyde(self.mapa, self.TAMANIO_CELDA)
         
-        # Crear la lista de fantasmas
-        self.fantasmas = [self.pinky, self.clyde]
+        # Crear todos los fantasmas
+        self.pinky = Pinky(self.mapa, self.TAMANIO_CELDA)
+        self.blinky = Blinky(self.mapa, self.TAMANIO_CELDA) 
+        self.clyde = Clyde(self.mapa, self.TAMANIO_CELDA)
+        self.inky = Inky(self.mapa, self.TAMANIO_CELDA)
+
+        self.fantasmas = [self.pinky, self.blinky, self.clyde, self.inky]
         
         self.contador_fruta = 0
         self.estado = EstadoJuego.PREPARADO
@@ -83,7 +88,9 @@ class JuegoPacman:
         self.mapa.dibujar(self.pantalla)
         self.pacman.dibujar(self.pantalla)
         self.pinky.dibujar(self.pantalla)
+        self.blinky.dibujar(self.pantalla)
         self.clyde.dibujar(self.pantalla)
+        self.inky.dibujar(self.pantalla)
 
         # Mostrar mensajes según el estado
         if self.estado == EstadoJuego.PREPARADO:
@@ -97,7 +104,9 @@ class JuegoPacman:
     def activar_modo_frightened(self, duracion=300):
         duracion = 7000
         self.pinky.activar_frightened(duracion)
+        self.blinky.activar_frightened(duracion)
         self.clyde.activar_frightened(duracion)
+        self.inky.activar_frightened(duracion)
 
     def ejecutar(self):
         jugando = True
@@ -127,11 +136,15 @@ class JuegoPacman:
 
                 if self.contador_fruta % 2 == 0:
                     self.pinky.mover(self.pacman, self.mapa)
+                    self.blinky.mover(self.pacman, self.mapa)
                     self.clyde.mover(self.pacman, self.mapa)
+                    self.inky.mover(self.pacman, self.blinky, self.mapa)
 
                 # Verificar colisión entre los fantasmas y PacMan
                 self.pinky.verificar_colision_con_pacman(self.pacman)
+                self.blinky.verificar_colision_con_pacman(self.pacman)
                 self.clyde.verificar_colision_con_pacman(self.pacman)
+                self.inky.verificar_colision_con_pacman(self.pacman)
 
             # Dibujar el estado actual del juego
             self.dibujar_juego()
@@ -143,3 +156,4 @@ class JuegoPacman:
 if __name__ == "__main__":
     juego = JuegoPacman()
     juego.ejecutar()
+
