@@ -51,6 +51,9 @@ class Mapa:
         self.num_filas = len(self.matriz)
 
     def es_pared(self, posicion):
+        if posicion not in self.tabla_hash:
+            #print(f"Posición {posicion} no encontrada en el mapa.")
+            return True  # Consideramos que si no se encuentra la posición, es una pared por defecto
         return self.tabla_hash.get(posicion) == "PARED"
 
     def obtener_objeto(self, posicion):
