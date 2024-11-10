@@ -69,6 +69,9 @@ class Clyde:
                 self.frame_actual = 0  # Cambia de nuevo a la imagen normal
                 print("Clyde ya no está asustado.")
 
+    def desactivar_frightened(self):
+        self.estado_frightened = False
+
     def mover(self, pacman, mapa):
         """Mueve a Clyde hacia su objetivo usando el algoritmo de Dijkstra."""
         self.ciclos_movimiento += 1
