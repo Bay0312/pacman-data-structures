@@ -56,6 +56,40 @@ class Mapa:
             return True  # Consideramos que si no se encuentra la posición, es una pared por defecto
         return self.tabla_hash.get(posicion) == "PARED"
 
+    def guardar_estado(self):
+        estado_mapa = []
+        for y in range(self.num_filas):
+            fila = []
+            for x in range(self.num_columnas):
+                celda = self.tabla_hash.get((x, y))
+                if isinstance(celda, Punto):
+                    fila.append(2)
+                elif isinstance(celda, PildoraDePoder):
+                    fila.append(3)
+                elif isinstance(celda, Fruta):
+                    fila.append(4)
+                elif celda == "PARED":
+                    fila.append(1)
+                else:
+                    fila.append(0)  # Vacío
+            estado_mapa.append(fila)
+        return estado_mapa
+
+    def cargar_estado(self, estado_mapa):
+        self.tabla_hash = {}
+        for y, fila in enumerate(estado_mapa):
+            for x, celda in enumerate(fila):
+                if celda == 1:
+                    self.tabla_hash[(x, y)] = "PARED"
+                elif celda == 2:
+                    self.tabla_hash[(x, y)] = Punto((x, y))
+                elif celda == 3:
+                    self.tabla_hash[(x, y)] = PildoraDePoder((x, y))
+                elif celda == 4:
+                    self.tabla_hash[(x, y)] = Fruta((x, y), self.tamanio_celda)
+                else:
+                    self.tabla_hash[(x, y)] = "VACIO"
+
     def obtener_objeto(self, posicion):
         obj = self.tabla_hash.get(posicion)
         if isinstance(obj, (Punto, Fruta, PildoraDePoder)):

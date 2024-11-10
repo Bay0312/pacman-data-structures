@@ -1,10 +1,12 @@
 import pygame
+import json  # Para guardar y cargar la partida
+import time
 from mapa import Mapa
 from pacman import PacMan
 from pinky import Pinky
 from clyde import Clyde
-import time
 from config import *
+
 
 class JuegoPacman:
     def __init__(self):
@@ -14,7 +16,7 @@ class JuegoPacman:
 
         # Fuentes
         self.fuente_grande = pygame.font.Font(None, 74)
-        self.fuente_pequenia = pygame.font.Font(None, 36)
+        self.fuente_pequenia = pygame.font.Font(None, 33)
 
         self.reiniciar_juego()
 
@@ -24,39 +26,172 @@ class JuegoPacman:
         self.pacman = PacMan(posicion=(1, 1), tamanio_celda=self.TAMANIO_CELDA)
         self.pinky = Pinky(self.mapa, self.TAMANIO_CELDA)
         self.clyde = Clyde(self.mapa, self.TAMANIO_CELDA)
-        
-        # Crear la lista de fantasmas
         self.fantasmas = [self.pinky, self.clyde]
-        
         self.contador_fruta = 0
         self.estado = EstadoJuego.PREPARADO
         self.tiempo_inicio = time.time()
         self.puntos_totales = self.mapa.contar_puntos_iniciales()
         self.puntos_recolectados = 0
 
-    def mostrar_mensaje(self, texto, y_offset=0, tamanio_grande=True):
-        fuente = self.fuente_grande if tamanio_grande else self.fuente_pequenia
-        texto_surface = fuente.render(texto, True, COLOR_TEXTO)
-        texto_rect = texto_surface.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2 + y_offset))
-        self.pantalla.blit(texto_surface, texto_rect)
+    def guardar_juego(self):
+        estado = {
+            "pacman": {
+                "posicion": self.pacman.posicion,
+                "puntuacion": self.pacman.puntuacion,
+                "vidas": self.pacman.vidas
+            },
+            "pinky": {
+                "posicion": self.pinky.posicion,
+                "frightened": self.pinky.estado_frightened,
+                "tiempo_restante_frightened": self.pinky.duracion_frightened - (
+                            pygame.time.get_ticks() - self.pinky.inicio_frightened) if self.pinky.estado_frightened else 0
+            },
+            "clyde": {
+                "posicion": self.clyde.posicion,
+                "frightened": self.clyde.estado_frightened,
+                "tiempo_restante_frightened": self.clyde.duracion_frightened - (
+                            pygame.time.get_ticks() - self.clyde.inicio_frightened) if self.clyde.estado_frightened else 0
+            },
+            "puntos_recolectados": self.puntos_recolectados,
+            "estado_mapa": self.mapa.guardar_estado()
+        }
+        with open("guardado.json", "w") as archivo:
+            json.dump(estado, archivo)
+        print("Partida guardada.")
 
-    def actualizar_estado(self):
-        if self.puntos_recolectados >= self.puntos_totales:
-            self.estado = EstadoJuego.VICTORIA
+    def cargar_juego(self):
+        try:
+            with open("guardado.json", "r") as archivo:
+                estado = json.load(archivo)
+            self.pacman.posicion = tuple(estado["pacman"]["posicion"])
+            self.pacman.puntuacion = estado["pacman"]["puntuacion"]
+            self.pacman.vidas = estado["pacman"]["vidas"]
 
-        if self.pacman.vidas == 0:
-            self.estado = EstadoJuego.DERROTA
-        
-        # Cambiar la llamada aquí para pasar activar_modo_frightened
-        if self.pacman.recoger_pildora_poder(self.mapa, self.activar_modo_frightened):
-            self.activar_modo_frightened(duracion=5000)
+            # Pinky
+            self.pinky.posicion = tuple(estado["pinky"]["posicion"])
+            if estado["pinky"]["frightened"]:
+                self.pinky.activar_frightened(estado["pinky"]["tiempo_restante_frightened"])
+            else:
+                self.pinky.desactivar_frightened()
+
+            # Clyde
+            self.clyde.posicion = tuple(estado["clyde"]["posicion"])
+            if estado["clyde"]["frightened"]:
+                self.clyde.activar_frightened(estado["clyde"]["tiempo_restante_frightened"])
+            else:
+                self.clyde.desactivar_frightened()
+
+            self.puntos_recolectados = estado["puntos_recolectados"]
+            self.mapa.cargar_estado(estado["estado_mapa"])
+
+            print("Partida cargada.")
+            return True
+        except FileNotFoundError:
+            print("No se encontró ninguna partida guardada.")
+            return False
+
+    # Mostrar modal es una funcion generada por IA
+    def mostrar_modal(self, mensaje, duracion=2, color_fondo=(50, 50, 50), color_texto=(0, 255, 0)):
+        """
+        Muestra un mensaje modal en el centro de la pantalla.
+
+        :param mensaje: Texto a mostrar en el modal.
+        :param duracion: Duración en segundos del modal.
+        :param color_fondo: Color de fondo del modal (RGB).
+        :param color_texto: Color del texto del mensaje (RGB).
+        """
+        tiempo_inicial = time.time()
+
+        while time.time() - tiempo_inicial < duracion:
+            # Fondo modal
+            fondo_modal = pygame.Surface((300, 100))
+            fondo_modal.set_alpha(200)  # Fondo semitransparente
+            fondo_modal.fill(color_fondo)  # Color de fondo personalizado
+            rect_modal = fondo_modal.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2))
+
+            # Renderizar el mensaje en el modal
+            texto = self.fuente_pequenia.render(mensaje, True, color_texto)  # Color de texto personalizado
+            texto_rect = texto.get_rect(center=rect_modal.center)
+
+            # Dibujar el modal y el mensaje en pantalla
+            self.pantalla.blit(fondo_modal, rect_modal)
+            self.pantalla.blit(texto, texto_rect)
+            pygame.display.flip()  # Actualizar pantalla
+
+            # Manejar eventos para permitir salir con QUIT sin congelarse
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+
+# mostrar_menu_pausa es una funcion generada por IA
+    def mostrar_menu_pausa(self):
+        opciones = ["Continuar", "Guardar", "Cargar", "Salir"]
+        seleccion = 0
+        mensaje_exito = None  # Mensaje de éxito temporal
+
+        en_pausa = True
+        while en_pausa:
+            self.pantalla.fill((0, 0, 0))  # Color de fondo negro
+            fondo_rect = pygame.Rect(ANCHO_VENTANA // 2 - 150, ALTO_VENTANA // 2 - 100, 300, 250)
+            pygame.draw.rect(self.pantalla, (50, 50, 50), fondo_rect)  # Fondo del menú de pausa
+            pygame.draw.rect(self.pantalla, (200, 200, 200), fondo_rect, 3)  # Borde del menú de pausa
+
+            # Dibujar opciones
+            for i, opcion in enumerate(opciones):
+                color = COLOR_TEXTO if i != seleccion else (255, 0, 0)  # Rojo si está seleccionado
+                texto = self.fuente_pequenia.render(opcion, True, color)
+                texto_rect = texto.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2 - 60 + i * 40))
+                self.pantalla.blit(texto, texto_rect)
+
+            pygame.display.flip()
+
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    return False
+                elif evento.type == pygame.KEYDOWN:
+                    if evento.key == pygame.K_ESCAPE:
+                        return True
+                    elif evento.key == pygame.K_UP:
+                        seleccion = (seleccion - 1) % len(opciones)
+                    elif evento.key == pygame.K_DOWN:
+                        seleccion = (seleccion + 1) % len(opciones)
+                    elif evento.key == pygame.K_RETURN:
+                        if opciones[seleccion] == "Continuar":
+                            en_pausa = False
+                        elif opciones[seleccion] == "Guardar":
+                            self.guardar_juego()
+                            mensaje_exito = "Juego guardado con éxito"
+                            self.mostrar_modal(mensaje_exito, color_fondo=(0, 100, 0),
+                                               color_texto=(255, 255, 255))  # Modal verde con texto blanco
+                        elif opciones[seleccion] == "Cargar":
+                            # Utilizar el resultado de cargar_juego para mostrar el mensaje correcto
+                            if self.cargar_juego():
+                                mensaje_exito = "Juego cargado con éxito"
+                                self.mostrar_modal(mensaje_exito, color_fondo=(0, 0, 100),
+                                                   color_texto=(255, 255, 255))  # Modal azul con texto blanco
+                            else:
+                                mensaje_exito = "No se encontró archivo de guardado"
+                                self.mostrar_modal(mensaje_exito, color_fondo=(100, 0, 0),
+                                                   color_texto=(255, 255, 255))  # Modal rojo con texto blanco
+                        elif opciones[seleccion] == "Salir":
+                            return False
+
+            # Limitar el tiempo de visualización del mensaje de éxito
+            if mensaje_exito:
+                pygame.time.delay(300)
+                mensaje_exito = None
+
+        return True
 
     def manejar_eventos(self):
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 return False
-            elif evento.type == pygame.KEYDOWN and self.estado == EstadoJuego.VICTORIA:
-                if evento.key == pygame.K_RETURN:
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_ESCAPE:
+                    return self.mostrar_menu_pausa()
+                elif evento.key == pygame.K_RETURN and self.estado == EstadoJuego.VICTORIA:
                     self.reiniciar_juego()
         return True
 
@@ -71,6 +206,23 @@ class JuegoPacman:
         elif teclas[pygame.K_DOWN]:
             return (0, 1)
         return None
+
+    def mostrar_mensaje(self, texto, y_offset=0, tamanio_grande=True):
+        fuente = self.fuente_grande if tamanio_grande else self.fuente_pequenia
+        texto_surface = fuente.render(texto, True, COLOR_TEXTO)
+        texto_rect = texto_surface.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2 + y_offset))
+        self.pantalla.blit(texto_surface, texto_rect)
+
+    def actualizar_estado(self):
+        if self.puntos_recolectados >= self.puntos_totales:
+            self.estado = EstadoJuego.VICTORIA
+
+        if self.pacman.vidas == 0:
+            self.estado = EstadoJuego.DERROTA
+
+        # Cambiar la llamada aquí para pasar activar_modo_frightened
+        if self.pacman.recoger_pildora_poder(self.mapa, self.activar_modo_frightened):
+            self.activar_modo_frightened(duracion=5000)
 
     def dibujar_juego(self):
         self.pantalla.fill(COLOR_FONDO)
@@ -92,7 +244,8 @@ class JuegoPacman:
             self.mostrar_mensaje("¡VICTORIA!", -40)
             self.mostrar_mensaje("Presiona ENTER para jugar de nuevo", 40, False)
         elif self.pacman.vidas <= 0:
-            self.pacman.mostrar_mensaje(self.pantalla, "¡Has Perdido!", self.fuente_grande, self.fuente_pequenia, COLOR_TEXTO, True)
+            self.pacman.mostrar_mensaje(self.pantalla, "¡Has Perdido!", self.fuente_grande, self.fuente_pequenia,
+                                        COLOR_TEXTO, True)
 
     def activar_modo_frightened(self, duracion=300):
         duracion = 7000
@@ -139,6 +292,7 @@ class JuegoPacman:
             reloj.tick(FPS)
 
         pygame.quit()
+
 
 if __name__ == "__main__":
     juego = JuegoPacman()

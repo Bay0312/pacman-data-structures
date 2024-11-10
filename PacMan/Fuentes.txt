@@ -1,0 +1,3 @@
+Managing Game States in Pygame: Menus, Gameplay, and Beyond: https://www.codewithc.com/managing-game-states-in-pygame-menus-gameplay-and-beyond/#creating-dynamic-menus
+
+How To Use JSON In Python: https://www.youtube.com/watch?v=-51jxlQaxyA

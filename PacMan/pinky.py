@@ -4,6 +4,7 @@ import random
 import heapq  # Para la implementación del algoritmo A*
 import os
 
+
 class Pinky:
     def __init__(self, mapa, tamanio_celda, velocidad=1, intervalo_movimiento=1):
         self.mapa = mapa
