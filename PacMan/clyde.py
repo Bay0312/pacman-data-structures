@@ -57,32 +57,33 @@ class Clyde:
         self.estado_scatter = False
 
     def dibujar(self, pantalla):
-        x_pix = self.posicion[0] * self.tamanio_celda
-        y_pix = self.posicion[1] * self.tamanio_celda + ESPACIO_HUD
-
-        # Verificar si está en modo frightened
-        if self.estado_frightened and self.imagen_frightened:
-            pantalla.blit(self.imagen_frightened, (x_pix, y_pix))
+        x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
+        y_pix = self.posicion[1] * self.tamanio_celda + self.tamanio_celda // 2 + ESPACIO_HUD
+        
+        if self.estado_frightened:
+            imagen = self.imagen_frightened
         else:
-            pantalla.blit(self.imagenes_base[self.frame_actual], (x_pix, y_pix))
+            imagen = self.imagenes_base[self.frame_actual]
+            self.frame_actual = (self.frame_actual + 1) % len(self.imagenes_base)
+        
+        pantalla.blit(imagen, (x_pix - self.tamanio_celda // 2, y_pix - self.tamanio_celda // 2))
+
 
     def activar_frightened(self, duracion):
         self.estado_frightened = True
-        self.tiempo_frightened = duracion
-        
-        if self.imagen_frightened:
-            self.frame_actual = 1
+        self.duracion_frightened = duracion
+        self.inicio_frightened = pygame.time.get_ticks()
 
     def actualizar_frightened(self):
         if self.estado_frightened:
-            self.tiempo_frightened -= 1
-            if self.tiempo_frightened <= 0:
-                self.estado_frightened = False
-                self.frame_actual = 0
+            tiempo_actual = pygame.time.get_ticks()
+            if tiempo_actual - self.inicio_frightened >= self.duracion_frightened:
+                self.desactivar_frightened()
 
     def desactivar_frightened(self):
         self.estado_frightened = False
         self.frame_actual = 0
+        print('Clyde frightened desactivado. ')
 
     def mover(self, pacman, mapa):
         self.ciclos_movimiento += 1
@@ -117,6 +118,8 @@ class Clyde:
             self.mover_aleatoriamente(mapa)
 
         self.comportamiento = random.choice([0, 1])
+
+        self.verificar_colision_con_pacman(pacman)
 
 
     def es_movimiento_valido(self, nueva_posicion, mapa):
@@ -182,5 +185,8 @@ class Clyde:
 
     def verificar_colision_con_pacman(self, pacman):
         if self.posicion == pacman.posicion:
-            pacman.perder_vida()
-            self.restablecer_posicion()
+            if not self.estado_frightened:
+                pacman.perder_vida()
+            elif self.estado_frightened == True:
+                self.restablecer_posicion()
+                self.desactivar_frightened()

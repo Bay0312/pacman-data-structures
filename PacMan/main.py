@@ -338,6 +338,11 @@ class JuegoPacman:
                     self.clyde.mover(self.pacman, self.mapa)
                     self.inky.mover(self.pacman, self.blinky, self.mapa)
 
+                self.pinky.actualizar_frightened()
+                self.blinky.actualizar_frightened()
+                self.clyde.actualizar_frightened()
+                self.inky.actualizar_frightened()
+
                 # Verificar colisión entre los fantasmas y PacMan
                 self.pinky.verificar_colision_con_pacman(self.pacman)
                 self.blinky.verificar_colision_con_pacman(self.pacman)

@@ -126,11 +126,16 @@ class Blinky:
             siguiente_paso = camino[0]
             self.posicion = siguiente_paso
             self.direccion_actual = (siguiente_paso[0] - self.posicion[0], siguiente_paso[1] - self.posicion[1])
+        
+        self.verificar_colision_con_pacman(pacman)
 
     def verificar_colision_con_pacman(self, pacman):
         if self.posicion == pacman.posicion:
-            pacman.perder_vida()
-            self.restablecer_posicion()
+            if not self.estado_frightened:
+                pacman.perder_vida()
+            elif self.estado_frightened == True:
+                self.restablecer_posicion()
+                self.desactivar_frightened()
 
     def dibujar(self, pantalla):
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
@@ -146,6 +151,15 @@ class Blinky:
 
     def desactivar_frightened(self):
         self.estado_frightened = False
+        self.frame_actual = 0
+        print('Blinky frightened desactivado. ')
+    
+    def actualizar_frightened(self):
+        if self.estado_frightened:
+            tiempo_actual = pygame.time.get_ticks()
+            if tiempo_actual - self.inicio_frightened >= self.duracion_frightened:
+                self.desactivar_frightened()
+
 
     def mover_aleatoriamente(self, mapa):
         direcciones = [(1, 0), (-1, 0), (0, 1), (0, -1)]
