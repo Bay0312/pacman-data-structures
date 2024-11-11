@@ -40,3 +40,6 @@ RUTA_IMAGEN_BLINKY = [os.path.join("Fantasmas", "Blinky", f"Blinky{i}.png") for 
 RUTA_IMAGEN_INKY = [os.path.join("Fantasmas", "Inky", f"Inky{i}.png") for i in range(1, 3)]
 # RUTA_IMAGEN_ASUSTADO = [os.path.join("Fantasmas", "FantasmaAsustado", f"FantasmaAsustado{i}.png") for i in range(1, 3)]
 RUTA_IMAGEN_ASUSTADO = os.path.join("Fantasmas", "FantasmaAsustado", "FantasmaAsustado1.png")
+RUTA_SONIDO_INICIO = os.path.join("sonidos", "pacman.mp3")
+RUTA_SONIDO_FANTASMAS = os.path.join("sonidos", "fantasmas.mp3")
+RUTA_SONIDO_FIN_JUEGO = os.path.join("sonidos", "gameover.mp3")
