@@ -4,7 +4,6 @@ import random
 import heapq  # Para la implementación del algoritmo A*
 import os
 
-
 class Pinky:
     def __init__(self, mapa, tamanio_celda, velocidad=1, intervalo_movimiento=1):
         self.mapa = mapa
@@ -39,9 +38,19 @@ class Pinky:
             pygame.image.load(RUTA_IMAGEN_ASUSTADO).convert_alpha(),
             (self.tamanio_celda, self.tamanio_celda)
         ) if os.path.exists(RUTA_IMAGEN_ASUSTADO) else None
+
+        # Para scatter
+        self.estado_scatter = False
+        self.objetivo_scatter = (1, 1)  # Esquina superior izquierda del laberinto
     
     def restablecer_posicion(self):
         self.posicion = self.posicion_inicial
+
+    def activar_scatter(self):
+        self.estado_scatter = True
+
+    def desactivar_scatter(self):
+        self.estado_scatter = False
 
     def predecir_posicion_pacman(self, pacman):
         prediccion_x = pacman.posicion[0] + pacman.direccion_actual[0] * 4
@@ -111,7 +120,11 @@ class Pinky:
                 self.desactivar_frightened()
             return
 
-        objetivo = self.predecir_posicion_pacman(pacman)
+        if self.estado_scatter:
+            objetivo = self.objetivo_scatter
+        else:
+            objetivo = self.predecir_posicion_pacman(pacman)
+
         camino = self.buscar_camino(self.posicion, objetivo)
 
         if camino:

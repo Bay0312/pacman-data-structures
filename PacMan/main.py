@@ -41,6 +41,12 @@ class JuegoPacman:
         self.puntos_totales = self.mapa.contar_puntos_iniciales()
         self.puntos_recolectados = 0
 
+        # Temporizador para alternar entre modos
+        self.tiempo_modo = 0
+        self.intervalos_modos = [7, 20, 7, 20, 5, 20, 5, 20]  # Alterna entre scatter y chase
+        self.indice_modo = 0
+        self.modo_actual = 'scatter'
+
     def guardar_juego(self):
         estado = {
             "pacman": {
@@ -221,6 +227,17 @@ class JuegoPacman:
         if self.pacman.recoger_pildora_poder(self.mapa, self.activar_modo_frightened):
             self.activar_modo_frightened(duracion=5000)
 
+        tiempo_actual = time.time()
+        if tiempo_actual - self.tiempo_modo >= self.intervalos_modos[self.indice_modo]:
+            self.indice_modo = (self.indice_modo + 1) % len(self.intervalos_modos)
+            self.tiempo_modo = tiempo_actual
+            if self.modo_actual == 'scatter':
+                self.modo_actual = 'chase'
+                self.desactivar_modo_scatter()
+            else:
+                self.modo_actual = 'scatter'
+                self.activar_modo_scatter()
+
     def manejar_eventos(self):
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
@@ -275,6 +292,19 @@ class JuegoPacman:
         self.blinky.activar_frightened(duracion)
         self.clyde.activar_frightened(duracion)
         self.inky.activar_frightened(duracion)
+
+    def activar_modo_scatter(self):
+        self.pinky.activar_scatter()
+        self.blinky.activar_scatter()
+        self.clyde.activar_scatter()
+        self.inky.activar_scatter()
+
+    def desactivar_modo_scatter(self):
+        self.pinky.desactivar_scatter()
+        self.blinky.desactivar_scatter()
+        self.clyde.desactivar_scatter()
+        self.inky.desactivar_scatter()
+
 
     def ejecutar(self):
         jugando = True

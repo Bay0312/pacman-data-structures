@@ -19,6 +19,9 @@ class Inky:
         self.estado_frightened = False
         self.tiempo_frightened = 0
         self.duracion_frightened = 300
+
+        self.estado_scatter = False
+        self.objetivo_scatter = (25, 17)
         
         # Posición inicial de Inky
         centro_x = mapa.num_columnas // 2
@@ -42,6 +45,12 @@ class Inky:
     
     def restablecer_posicion(self):
         self.posicion = self.posicion_inicial
+
+    def activar_scatter(self):
+        self.estado_scatter = True
+
+    def desactivar_scatter(self):
+        self.estado_scatter = False
 
     def predecir_posicion_pacman(self, pacman):
         prediccion_x = pacman.posicion[0] + pacman.direccion_actual[0] * 4
@@ -111,15 +120,18 @@ class Inky:
                 self.desactivar_frightened()
             return
 
-        # Objetivo de Inky: una combinación de la posición de Pac-Man y Blinky
-        prediccion_pacman = self.predecir_posicion_pacman(pacman)
-        objetivo_x = 2 * prediccion_pacman[0] - blinky.posicion[0]
-        objetivo_y = 2 * prediccion_pacman[1] - blinky.posicion[1]
-        objetivo = (objetivo_x, objetivo_y)
+        if self.estado_scatter:
+            objetivo = self.objetivo_scatter
+        else:
+            # Objetivo de Inky: una combinación de la posición de Pac-Man y Blinky
+            prediccion_pacman = self.predecir_posicion_pacman(pacman)
+            objetivo_x = 2 * prediccion_pacman[0] - blinky.posicion[0]
+            objetivo_y = 2 * prediccion_pacman[1] - blinky.posicion[1]
+            objetivo = (objetivo_x, objetivo_y)
 
-        # Verificar que el objetivo esté dentro del mapa y no sea una pared
-        if not (0 <= objetivo_x < mapa.num_columnas and 0 <= objetivo_y < mapa.num_filas) or mapa.es_pared(objetivo):
-            objetivo = self.encontrar_objetivo_valido(prediccion_pacman, blinky)
+            # Verificar que el objetivo esté dentro del mapa y no sea una pared
+            if not (0 <= objetivo_x < mapa.num_columnas and 0 <= objetivo_y < mapa.num_filas) or mapa.es_pared(objetivo):
+                objetivo = self.encontrar_objetivo_valido(prediccion_pacman, blinky)
 
         # Buscar camino hacia el objetivo
         camino = self.buscar_camino(self.posicion, objetivo)

@@ -39,8 +39,18 @@ class Blinky:
             (self.tamanio_celda, self.tamanio_celda)
         ) if os.path.exists(RUTA_IMAGEN_ASUSTADO) else None
 
+        # Para scatter
+        self.estado_scatter = False
+        self.objetivo_scatter = (25, 1)  # Esquina superior derecha del laberinto
+
     def restablecer_posicion(self):
         self.posicion = self.posicion_inicial
+
+    def activar_scatter(self):
+        self.estado_scatter = True
+
+    def desactivar_scatter(self):
+        self.estado_scatter = False
 
     def obtener_vecinos(self, nodo):
         x, y = nodo
@@ -105,8 +115,11 @@ class Blinky:
                 self.desactivar_frightened()
             return
 
-        # Blinky persigue directamente a Pac-Man, sin predicción
-        objetivo = pacman.posicion  # Blinky va directamente a la posición de Pac-Man
+        if self.estado_scatter:
+            objetivo = self.objetivo_scatter
+        else:
+            objetivo = pacman.posicion  # Blinky va directamente a la posición de Pac-Man
+
         camino = self.buscar_camino(self.posicion, objetivo)
 
         if camino:
@@ -143,3 +156,4 @@ class Blinky:
                 self.posicion = nueva_posicion
                 self.direccion_actual = direccion
                 break
+

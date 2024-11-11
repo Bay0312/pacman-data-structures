@@ -43,9 +43,19 @@ class Clyde:
             print("Error: No se encontró la imagen asustada de Clyde.")
             self.imagen_frightened = None
 
+        # Para scatter
+        self.estado_scatter = False
+        self.objetivo_scatter = (1, 17)  # Esquina inferior izquierda del laberinto
+
     def restablecer_posicion(self):
         """Restablece la posición de Clyde a su posición inicial"""
         self.posicion = self.posicion_inicial
+
+    def activar_scatter(self):
+        self.estado_scatter = True
+
+    def desactivar_scatter(self):
+        self.estado_scatter = False
 
     def dibujar(self, pantalla):
         """Dibuja a Clyde en la pantalla en la posición actual"""
@@ -87,13 +97,31 @@ class Clyde:
             self.mover_aleatoriamente(mapa)
             return
 
-        # Si no está asustado, decide el comportamiento
-        if self.comportamiento == 0:
-            self.perseguir_pacman(pacman)
+        if self.estado_scatter:
+            objetivo = self.objetivo_scatter
         else:
-            self.alejarse_de_pacman(pacman)
+            # Si no está asustado, decide el comportamiento
+            if self.comportamiento == 0:
+                objetivo = pacman.posicion  # Perseguir a Pac-Man
+            else:
+                # Alejarse de Pac-Man
+                nodos_posibles = list(self.mapa.tabla_hash.keys())
+                nodos_lejos = sorted(nodos_posibles, key=lambda nodo: self.heuristica(nodo, pacman.posicion), reverse=True)
+                if nodos_lejos:
+                    objetivo = nodos_lejos[0]
+                else:
+                    objetivo = pacman.posicion
+
+        camino = self.buscar_camino(objetivo)
+
+        if camino and len(camino) > 1:
+            self.posicion = camino[1]  # Mueve a Clyde al siguiente nodo en el camino
+        else:
+            # Si no se encuentra un camino válido, mover aleatoriamente
+            self.mover_aleatoriamente(mapa)
 
         self.comportamiento = random.choice([0, 1])
+
 
     def es_movimiento_valido(self, nueva_posicion, mapa):
         """Verifica si el movimiento a la nueva posición es válido en el mapa"""
@@ -102,28 +130,15 @@ class Clyde:
         alto = mapa.num_filas
         return (0 <= x < ancho) and (0 <= y < alto) and not mapa.es_pared((x, y))
 
-    def perseguir_pacman(self, pacman):
-        """Utiliza Dijkstra para perseguir a PacMan"""
-        camino = self.buscar_camino(pacman.posicion)
-        if camino:
-            self.posicion = camino[1]  # Mueve a Clyde al siguiente nodo en el camino
-
-    def alejarse_de_pacman(self, pacman):
-        """Utiliza Dijkstra para alejarse de PacMan"""
-        # Buscamos el nodo más alejado de PacMan usando Dijkstra
-        nodos_posibles = list(self.mapa.tabla_hash.keys())
-        nodos_lejos = sorted(nodos_posibles, key=lambda nodo: self.heuristica(nodo, pacman.posicion), reverse=True)
-        if nodos_lejos:
-            camino = self.buscar_camino(nodos_lejos[0])  # El nodo más alejado
-            if camino:
-                self.posicion = camino[1]  # Mueve a Clyde al siguiente nodo en el camino
-
     def heuristica(self, nodo, objetivo):
         """Calcula la distancia Manhattan entre dos nodos"""
         return abs(nodo[0] - objetivo[0]) + abs(nodo[1] - objetivo[1])
 
     def buscar_camino(self, objetivo):
         """Implementa el algoritmo de Dijkstra para encontrar el camino más corto"""
+        if not self.es_movimiento_valido(objetivo, self.mapa):
+            return []
+
         # Usamos un min-heap para Dijkstra
         frontera = []
         heapq.heappush(frontera, (0, self.posicion))  # Cola de prioridad (costo, nodo)
@@ -143,7 +158,8 @@ class Clyde:
                     heapq.heappush(frontera, (nuevo_costo, vecino))
                     padres[vecino] = nodo_actual
 
-        return None  # No se encontró camino
+        return []  # No se encontró camino
+
 
     def obtener_vecinos(self, nodo):
         # Obtener los vecinos de un nodo
