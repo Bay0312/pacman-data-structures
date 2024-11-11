@@ -111,9 +111,15 @@ class Inky:
                 self.desactivar_frightened()
             return
 
-        # Objetivo de Inky: una combinación de la posición de PacMan y Blinky
+        # Objetivo de Inky: una combinación de la posición de Pac-Man y Blinky
         prediccion_pacman = self.predecir_posicion_pacman(pacman)
-        objetivo = (2 * prediccion_pacman[0] - blinky.posicion[0], 2 * prediccion_pacman[1] - blinky.posicion[1])
+        objetivo_x = 2 * prediccion_pacman[0] - blinky.posicion[0]
+        objetivo_y = 2 * prediccion_pacman[1] - blinky.posicion[1]
+        objetivo = (objetivo_x, objetivo_y)
+
+        # Verificar que el objetivo esté dentro del mapa y no sea una pared
+        if not (0 <= objetivo_x < mapa.num_columnas and 0 <= objetivo_y < mapa.num_filas) or mapa.es_pared(objetivo):
+            objetivo = self.encontrar_objetivo_valido(prediccion_pacman, blinky)
 
         # Buscar camino hacia el objetivo
         camino = self.buscar_camino(self.posicion, objetivo)
@@ -122,6 +128,39 @@ class Inky:
             siguiente_paso = camino[0]
             self.posicion = siguiente_paso
             self.direccion_actual = (siguiente_paso[0] - self.posicion[0], siguiente_paso[1] - self.posicion[1])
+
+    def predecir_posicion_pacman(self, pacman):
+        prediccion_x = pacman.posicion[0] + pacman.direccion_actual[0] * 4
+        prediccion_y = pacman.posicion[1] + pacman.direccion_actual[1] * 4
+
+        # Verificar que la predicción esté dentro del mapa y no sea una pared
+        if not (0 <= prediccion_x < self.mapa.num_columnas and 0 <= prediccion_y < self.mapa.num_filas) or self.mapa.es_pared((prediccion_x, prediccion_y)):
+            return pacman.posicion  # Si la predicción no es válida, usar la posición actual de Pac-Man
+
+        return (prediccion_x, prediccion_y)
+
+    def encontrar_objetivo_valido(self, prediccion_pacman, blinky):
+        # Generar una lista de posibles objetivos alrededor de la predicción de Pac-Man
+        posibles_objetivos = [
+            (prediccion_pacman[0] + dx, prediccion_pacman[1] + dy)
+            for dx in range(-2, 3)
+            for dy in range(-2, 3)
+            if (dx != 0 or dy != 0)
+        ]
+
+        # Filtrar objetivos válidos
+        objetivos_validos = [
+            objetivo for objetivo in posibles_objetivos
+            if 0 <= objetivo[0] < self.mapa.num_columnas and 0 <= objetivo[1] < self.mapa.num_filas and not self.mapa.es_pared(objetivo)
+        ]
+
+        # Si no hay objetivos válidos, usar la posición inicial
+        if not objetivos_validos:
+            return self.posicion_inicial
+
+        # Seleccionar el objetivo más cercano a la combinación de Pac-Man y Blinky
+        objetivo_final = min(objetivos_validos, key=lambda obj: self.heuristica(obj, (2 * prediccion_pacman[0] - blinky.posicion[0], 2 * prediccion_pacman[1] - blinky.posicion[1])))
+        return objetivo_final
 
     def verificar_colision_con_pacman(self, pacman):
         if self.posicion == pacman.posicion:
