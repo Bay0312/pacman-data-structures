@@ -210,11 +210,12 @@ class JuegoPacman:
 
         return True
 
-    def mostrar_mensaje(self, texto, y_offset=0, tamanio_grande=True):
-        fuente = self.fuente_grande if tamanio_grande else self.fuente_pequenia
-        texto_surface = fuente.render(texto, True, COLOR_TEXTO)
-        texto_rect = texto_surface.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2 + y_offset))
-        self.pantalla.blit(texto_surface, texto_rect)
+    def mostrar_mensaje(self, texto, desplazamiento_y=0, color=(255, 255, 255)):
+        fuente = pygame.font.Font(None, 48)
+        mensaje = fuente.render(texto, True, color)
+        rect_mensaje = mensaje.get_rect(center=(self.pantalla.get_width() // 2, 
+                                                self.pantalla.get_height() // 2 + desplazamiento_y))
+        self.pantalla.blit(mensaje, rect_mensaje)
 
     def actualizar_estado(self):
         if self.puntos_recolectados >= self.puntos_totales:
@@ -283,8 +284,8 @@ class JuegoPacman:
             self.mostrar_mensaje("¡VICTORIA!", -40)
             self.mostrar_mensaje("Presiona ENTER para jugar de nuevo", 40, False)
         elif self.pacman.vidas <= 0:
-            self.pacman.mostrar_mensaje(self.pantalla, "¡Has Perdido!", self.fuente_grande, self.fuente_pequenia,
-                                        COLOR_TEXTO, True)
+            self.mostrar_mensaje("¡Has Perdido!", -40)
+            self.mostrar_mensaje("Presiona ESC para salir", 40, False)
 
     def activar_modo_frightened(self, duracion=300):
         duracion = 7000
@@ -305,6 +306,26 @@ class JuegoPacman:
         self.clyde.desactivar_scatter()
         self.inky.desactivar_scatter()
 
+    def mostrar_pantalla_derrota(self):
+        # Crear pantalla negra
+        self.pantalla.fill((0, 0, 0))
+
+        # Mensajes de derrota
+        self.mostrar_mensaje("¡Has Perdido!", -60, color=(255, 0, 0))
+        self.mostrar_mensaje(f"Puntos Obtenidos: {self.pacman.puntos_recolectados}", 0, color=(255, 255, 255))
+        self.mostrar_mensaje("Presiona ESC para salir", 60, color=(255, 255, 255))
+
+        # Actualizar display
+        pygame.display.flip()
+
+        # Esperar hasta que se presione ESC
+        esperando = True
+        while esperando:
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    esperando = False
+                elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
+                    esperando = False
 
     def ejecutar(self):
         jugando = True
@@ -312,6 +333,13 @@ class JuegoPacman:
 
         while jugando:
             jugando = self.manejar_eventos()
+
+            # Verificar si se debe mostrar pantalla de derrota
+            if self.pacman.vidas <= 0:
+                self.estado = EstadoJuego.DERROTA
+                self.mostrar_pantalla_derrota()
+                break  # Salir del bucle del juego después de mostrar la pantalla
+
             movimiento = self.capturar_movimiento()
 
             if self.estado == EstadoJuego.PREPARADO:
@@ -320,7 +348,6 @@ class JuegoPacman:
 
             # Mover PacMan solo si hay movimiento detectado
             if self.estado == EstadoJuego.JUGANDO and movimiento:
-                # Pasar la lista de fantasmas al método mover
                 self.pacman.mover(movimiento, self.mapa, self.activar_modo_frightened, self.fantasmas)
                 self.puntos_recolectados = self.pacman.puntos_recolectados
                 self.actualizar_estado()
@@ -355,7 +382,6 @@ class JuegoPacman:
             reloj.tick(FPS)
 
         pygame.quit()
-
 
 if __name__ == "__main__":
     juego = JuegoPacman()
