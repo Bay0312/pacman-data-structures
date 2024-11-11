@@ -2,7 +2,7 @@ import heapq
 import random
 import os
 import pygame
-from config import RUTA_IMAGEN_CLYDE, RUTA_IMAGEN_ASUSTADO, ESPACIO_HUD
+from config import *
 
 class Clyde:
     def __init__(self, mapa, tamanio_celda):
@@ -48,7 +48,6 @@ class Clyde:
         self.objetivo_scatter = (1, 17)  # Esquina inferior izquierda del laberinto
 
     def restablecer_posicion(self):
-        """Restablece la posición de Clyde a su posición inicial"""
         self.posicion = self.posicion_inicial
 
     def activar_scatter(self):
@@ -58,10 +57,14 @@ class Clyde:
         self.estado_scatter = False
 
     def dibujar(self, pantalla):
-        """Dibuja a Clyde en la pantalla en la posición actual"""
         x_pix = self.posicion[0] * self.tamanio_celda
         y_pix = self.posicion[1] * self.tamanio_celda + ESPACIO_HUD
-        pantalla.blit(self.imagenes_base[self.frame_actual], (x_pix, y_pix))
+
+        # Verificar si está en modo frightened
+        if self.estado_frightened and self.imagen_frightened:
+            pantalla.blit(self.imagen_frightened, (x_pix, y_pix))
+        else:
+            pantalla.blit(self.imagenes_base[self.frame_actual], (x_pix, y_pix))
 
     def activar_frightened(self, duracion):
         self.estado_frightened = True
@@ -71,28 +74,24 @@ class Clyde:
             self.frame_actual = 1
 
     def actualizar_frightened(self):
-        """Actualiza el estado asustado de Clyde."""
         if self.estado_frightened:
             self.tiempo_frightened -= 1
             if self.tiempo_frightened <= 0:
                 self.estado_frightened = False
-                self.frame_actual = 0  # Cambia de nuevo a la imagen normal
-                print("Clyde ya no está asustado.")
+                self.frame_actual = 0
 
     def desactivar_frightened(self):
         self.estado_frightened = False
+        self.frame_actual = 0
 
     def mover(self, pacman, mapa):
-        """Mueve a Clyde hacia su objetivo usando el algoritmo de Dijkstra."""
         self.ciclos_movimiento += 1
         if self.ciclos_movimiento < self.intervalo_movimiento:
             return
         self.ciclos_movimiento = 0
 
-        # Actualiza el estado "frightened" de Clyde
         self.actualizar_frightened()
 
-        # Si está en estado "frightened", mueve aleatoriamente
         if self.estado_frightened:
             self.mover_aleatoriamente(mapa)
             return
@@ -100,11 +99,9 @@ class Clyde:
         if self.estado_scatter:
             objetivo = self.objetivo_scatter
         else:
-            # Si no está asustado, decide el comportamiento
             if self.comportamiento == 0:
-                objetivo = pacman.posicion  # Perseguir a Pac-Man
+                objetivo = pacman.posicion
             else:
-                # Alejarse de Pac-Man
                 nodos_posibles = list(self.mapa.tabla_hash.keys())
                 nodos_lejos = sorted(nodos_posibles, key=lambda nodo: self.heuristica(nodo, pacman.posicion), reverse=True)
                 if nodos_lejos:
@@ -115,27 +112,24 @@ class Clyde:
         camino = self.buscar_camino(objetivo)
 
         if camino and len(camino) > 1:
-            self.posicion = camino[1]  # Mueve a Clyde al siguiente nodo en el camino
+            self.posicion = camino[1]
         else:
-            # Si no se encuentra un camino válido, mover aleatoriamente
             self.mover_aleatoriamente(mapa)
 
         self.comportamiento = random.choice([0, 1])
 
 
     def es_movimiento_valido(self, nueva_posicion, mapa):
-        """Verifica si el movimiento a la nueva posición es válido en el mapa"""
         x, y = nueva_posicion
         ancho = mapa.num_columnas
         alto = mapa.num_filas
         return (0 <= x < ancho) and (0 <= y < alto) and not mapa.es_pared((x, y))
 
     def heuristica(self, nodo, objetivo):
-        """Calcula la distancia Manhattan entre dos nodos"""
         return abs(nodo[0] - objetivo[0]) + abs(nodo[1] - objetivo[1])
 
     def buscar_camino(self, objetivo):
-        """Implementa el algoritmo de Dijkstra para encontrar el camino más corto"""
+        # Dijkstra (IA)
         if not self.es_movimiento_valido(objetivo, self.mapa):
             return []
 
@@ -162,7 +156,6 @@ class Clyde:
 
 
     def obtener_vecinos(self, nodo):
-        # Obtener los vecinos de un nodo
         vecinos = []
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Direcciones: izquierda, derecha, arriba, abajo
             vecino = (nodo[0] + dx, nodo[1] + dy)
@@ -172,7 +165,6 @@ class Clyde:
         return vecinos
 
     def reconstruir_camino(self, padres, nodo):
-        """Reconstruye el camino desde el nodo objetivo hasta el inicio"""
         camino = []
         while nodo is not None:
             camino.append(nodo)
@@ -180,7 +172,6 @@ class Clyde:
         return camino[::-1]  # Devuelve el camino en orden correcto
 
     def mover_aleatoriamente(self, mapa):
-        """Mueve a Clyde aleatoriamente"""
         direcciones = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         random.shuffle(direcciones)
         for direccion in direcciones:
