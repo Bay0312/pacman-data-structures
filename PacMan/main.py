@@ -13,12 +13,18 @@ import json
 class JuegoPacman:
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()  # Inicializar el mezclador de sonido
         self.pantalla = pygame.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA))
         pygame.display.set_caption("Pac-Man")
 
         # Fuentes
         self.fuente_grande = pygame.font.Font(None, 74)
         self.fuente_pequenia = pygame.font.Font(None, 36)
+
+        # Cargar sonidos
+        self.sonido_inicio = pygame.mixer.Sound(RUTA_SONIDO_INICIO)
+        self.sonido_fantasmas = RUTA_SONIDO_FANTASMAS
+        self.sonido_fin_juego = pygame.mixer.Sound(RUTA_SONIDO_FIN_JUEGO)
 
         self.reiniciar_juego()
 
@@ -46,6 +52,11 @@ class JuegoPacman:
         self.intervalos_modos = [7, 20, 7, 20, 5, 20, 5, 20]  # Alterna entre scatter y chase
         self.indice_modo = 0
         self.modo_actual = 'scatter'
+
+        # Reproducir sonido de inicio
+        self.sonido_inicio.play()
+        # Programar el sonido de los fantasmas para que empiece después del sonido de inicio
+        pygame.time.set_timer(pygame.USEREVENT, int(self.sonido_inicio.get_length() * 1000))
 
     def guardar_juego(self):
         estado = {
@@ -219,9 +230,13 @@ class JuegoPacman:
     def actualizar_estado(self):
         if self.puntos_recolectados >= self.puntos_totales:
             self.estado = EstadoJuego.VICTORIA
+            pygame.mixer.music.stop()
+            self.sonido_fin_juego.play()
 
         if self.pacman.vidas == 0:
             self.estado = EstadoJuego.DERROTA
+            pygame.mixer.music.stop()
+            self.sonido_fin_juego.play()
 
         # Cambiar la llamada aquí para pasar activar_modo_frightened
         if self.pacman.recoger_pildora_poder(self.mapa, self.activar_modo_frightened):
@@ -247,6 +262,9 @@ class JuegoPacman:
                     return self.mostrar_menu_pausa()
                 elif evento.key == pygame.K_RETURN and self.estado == EstadoJuego.VICTORIA:
                     self.reiniciar_juego()
+            elif evento.type == pygame.USEREVENT:
+                pygame.mixer.music.load(self.sonido_fantasmas)
+                pygame.mixer.music.play(-1)  # Reproducir en bucle
         return True
 
     def capturar_movimiento(self):
