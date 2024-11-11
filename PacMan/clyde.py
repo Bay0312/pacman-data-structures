@@ -184,9 +184,9 @@ class Clyde:
                 break
 
     def verificar_colision_con_pacman(self, pacman):
-        if  pacman.posicion == self.posicion:
-            if not self.estado_frightened:
-                pacman.perder_vida()
-            elif self.estado_frightened == True:
+        if pacman.posicion == self.posicion:
+            if self.estado_frightened:
                 self.restablecer_posicion()
                 self.desactivar_frightened()
+            else:
+                pacman.perder_vida()

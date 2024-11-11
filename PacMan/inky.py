@@ -177,12 +177,12 @@ class Inky:
         return objetivo_final
 
     def verificar_colision_con_pacman(self, pacman):
-        if  pacman.posicion == self.posicion:
-            if not self.estado_frightened:
-                pacman.perder_vida()
-            elif self.estado_frightened == True:
+        if pacman.posicion == self.posicion:
+            if self.estado_frightened:
                 self.restablecer_posicion()
                 self.desactivar_frightened()
+            else:
+                pacman.perder_vida()
 
     def dibujar(self, pantalla):
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
