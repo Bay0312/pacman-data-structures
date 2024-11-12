@@ -65,6 +65,7 @@ class PacMan:
                     self.activar_frightened_callback(activar_frightened_callback)
                 mapa.eliminar_objeto(self.posicion)
 
+    # Dibujar Pacman es una funcion generada por IA.
     def dibujar(self, pantalla):
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
         y_pix = self.posicion[1] * self.tamanio_celda + self.tamanio_celda // 2 + ESPACIO_HUD

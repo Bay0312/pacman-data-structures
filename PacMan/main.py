@@ -373,7 +373,7 @@ class JuegoPacman:
             # Generar fruta ocasionalmente durante el juego
             if self.estado == EstadoJuego.JUGANDO:
                 self.contador_fruta += 1
-                if self.contador_fruta > 800:
+                if self.contador_fruta > 300:
                     self.mapa.generar_fruta_aleatoria()
                     self.contador_fruta = 0
 
