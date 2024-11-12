@@ -1,3 +1,7 @@
 Managing Game States in Pygame: Menus, Gameplay, and Beyond: https://www.codewithc.com/managing-game-states-in-pygame-menus-gameplay-and-beyond/#creating-dynamic-menus
 
 How To Use JSON In Python: https://www.youtube.com/watch?v=-51jxlQaxyA
+
+Pac-Man Ghost AI Explained: https://www.youtube.com/watch?v=ataGotQ7ir8&t=272s
+
+https://es.wikipedia.org/wiki/Pac-Man
