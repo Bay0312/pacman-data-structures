@@ -140,8 +140,7 @@ class Pinky:
                 self.restablecer_posicion()
                 self.desactivar_frightened()
             else:
-                if not pacman.estado_inmune:
-                    pacman.perder_vida()
+                pacman.perder_vida()
 
     def dibujar(self, pantalla):
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
