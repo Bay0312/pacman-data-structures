@@ -57,6 +57,7 @@ class Pinky:
         prediccion_y = pacman.posicion[1] + pacman.direccion_actual[1] * 4
         return (prediccion_x, prediccion_y)
 
+    # IA
     def obtener_vecinos(self, nodo):
         x, y = nodo
         direcciones = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -73,6 +74,7 @@ class Pinky:
         # Distancia Manhattan
         return abs(nodo[0] - objetivo[0]) + abs(nodo[1] - objetivo[1])
 
+    # Ayuda de IA
     def buscar_camino(self, inicio, objetivo):
         frontera = []
         heapq.heappush(frontera, (0, inicio))

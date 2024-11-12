@@ -121,7 +121,6 @@ class Clyde:
 
         self.verificar_colision_con_pacman(pacman)
 
-
     def es_movimiento_valido(self, nueva_posicion, mapa):
         x, y = nueva_posicion
         ancho = mapa.num_columnas
@@ -167,6 +166,7 @@ class Clyde:
                 vecinos.append((vecino, costo))
         return vecinos
 
+    # IA
     def reconstruir_camino(self, padres, nodo):
         camino = []
         while nodo is not None:

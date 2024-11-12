@@ -52,6 +52,7 @@ class Blinky:
     def desactivar_scatter(self):
         self.estado_scatter = False
 
+    # IA
     def obtener_vecinos(self, nodo):
         x, y = nodo
         direcciones = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -137,6 +138,7 @@ class Blinky:
             else:
                 pacman.perder_vida()
 
+    # IA
     def dibujar(self, pantalla):
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
         y_pix = self.posicion[1] * self.tamanio_celda + self.tamanio_celda // 2 + ESPACIO_HUD

@@ -153,6 +153,7 @@ class Inky:
 
         return (prediccion_x, prediccion_y)
 
+    # Ayuda de IA
     def encontrar_objetivo_valido(self, prediccion_pacman, blinky):
         # Generar una lista de posibles objetivos alrededor de la predicción de Pac-Man
         posibles_objetivos = [
@@ -184,6 +185,7 @@ class Inky:
             else:
                 pacman.perder_vida()
 
+    # IA
     def dibujar(self, pantalla):
         x_pix = self.posicion[0] * self.tamanio_celda + self.tamanio_celda // 2
         y_pix = self.posicion[1] * self.tamanio_celda + self.tamanio_celda // 2 + ESPACIO_HUD
