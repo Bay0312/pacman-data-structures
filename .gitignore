@@ -1,18 +1,48 @@
-# PyCharm specific files
+# --- IDEs ---
 .idea/
+.vscode/
+
+# --- Python ---
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Virtual environment
+# --- Entornos virtuales ---
 venv/
 env/
+.venv/
 
-# Logs y archivos temporales
+# --- Logs / temporales ---
 *.log
 *.tmp
+*.cache
 
-# Archivos de sistema
+# --- SO ---
 .DS_Store
 Thumbs.db
+
+# --- Build/artefactos (pygbag) ---
+# Si el build está en la raíz:
+build/
+dist/
+# Si el build está dentro de PacMan/, ignora también:
+PacMan/build/
+PacMan/dist/
+
+# A veces pygbag genera paquetes/apks/wasm intermedios
+*.apk
+*.wasm
+*.data
+*.js
+
+# --- Datos del juego (guardados en runtime) ---
+guardado.json
+
+# --- Cobertura / herramientas opcionales ---
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+

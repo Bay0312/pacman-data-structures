@@ -5,7 +5,7 @@ COLOR_FONDO = (0, 0, 0)
 COLOR_PUNTO = (255, 255, 255)  # Blanco para puntos
 COLOR_PILDORA = (255, 255, 255)  # Blanco para píldoras
 COLOR_PARED = (0, 0, 255)  # Azul para paredes
-COLOR_TEXTO = (255, 247, 0, 255)  # Blanco para textos
+COLOR_TEXTO = (255, 247, 0)  # RGB
 COLOR_VICTORIA = (255, 255, 0)  # Amarillo para mensaje de victoria
 GROSOR_BORDE = 4  # Grosor del borde de las paredes
 
@@ -29,6 +29,7 @@ class EstadoJuego:
     JUGANDO = "jugando"
     VICTORIA = "victoria"
     DERROTA = "derrota"
+    PAUSA = "pausa"
 
 
 # Rutas de recursos
@@ -40,6 +41,6 @@ RUTA_IMAGEN_BLINKY = [os.path.join("Fantasmas", "Blinky", f"Blinky{i}.png") for 
 RUTA_IMAGEN_INKY = [os.path.join("Fantasmas", "Inky", f"Inky{i}.png") for i in range(1, 3)]
 # RUTA_IMAGEN_ASUSTADO = [os.path.join("Fantasmas", "FantasmaAsustado", f"FantasmaAsustado{i}.png") for i in range(1, 3)]
 RUTA_IMAGEN_ASUSTADO = os.path.join("Fantasmas", "FantasmaAsustado", "FantasmaAsustado1.png")
-RUTA_SONIDO_INICIO = os.path.join("sonidos", "pacman.mp3")
-RUTA_SONIDO_FANTASMAS = os.path.join("sonidos", "fantasmas.mp3")
-RUTA_SONIDO_FIN_JUEGO = os.path.join("sonidos", "gameover.mp3")
+RUTA_SONIDO_INICIO = os.path.join("sonidos", "pacman.ogg")
+RUTA_SONIDO_FANTASMAS = os.path.join("sonidos", "fantasmas.ogg")
+RUTA_SONIDO_FIN_JUEGO = os.path.join("sonidos", "gameover.ogg")

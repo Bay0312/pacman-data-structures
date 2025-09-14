@@ -1,4 +1,4 @@
-import pygame
+import pygame, asyncio, sys
 from mapa import Mapa
 from pacman import PacMan
 from blinky import Blinky
@@ -13,19 +13,65 @@ import json
 class JuegoPacman:
     def __init__(self):
         pygame.init()
-        pygame.mixer.init()  # Inicializar el mezclador de sonido
-        self.pantalla = pygame.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA))
-        pygame.display.set_caption("Pac-Man")
+        pygame.font.init()  # Necesario antes de usar pygame.font
+
+        # Plataforma
+        self.IS_WEB = (sys.platform == "emscripten")
+
+        # UI/estado
+        self.modal = None
+
+        # --- AUDIO SEGURO PARA WEB/ESCRITORIO ---
+        self.AUDIO_OK = False
+        try:
+            pygame.mixer.init()  # parámetros por defecto
+            self.AUDIO_OK = True
+        except pygame.error:
+            self.AUDIO_OK = False
+
+        # Pantalla
+        flags = 0
+        self.pantalla = pygame.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA), flags)
+        pygame.display.set_caption("Pacman")
 
         # Fuentes
         self.fuente_grande = pygame.font.Font(None, 74)
         self.fuente_pequenia = pygame.font.Font(None, 36)
 
-        # Cargar sonidos
-        self.sonido_inicio = pygame.mixer.Sound(RUTA_SONIDO_INICIO)
-        self.sonido_fantasmas = RUTA_SONIDO_FANTASMAS
-        self.sonido_fin_juego = pygame.mixer.Sound(RUTA_SONIDO_FIN_JUEGO)
+        # Cargar sonidos de forma segura
+        self.sonido_inicio = None
+        self.sonido_fin_juego = None
+        self.sonido_fantasmas = RUTA_SONIDO_FANTASMAS  # mixer.music.load usa ruta
 
+        if self.AUDIO_OK:
+            try:
+                self.sonido_inicio = pygame.mixer.Sound(RUTA_SONIDO_INICIO)
+            except pygame.error:
+                self.sonido_inicio = None
+                # No desactivamos completamente AUDIO_OK para permitir música de fondo
+
+        if self.AUDIO_OK:
+            try:
+                self.sonido_fin_juego = pygame.mixer.Sound(RUTA_SONIDO_FIN_JUEGO)
+            except pygame.error:
+                self.sonido_fin_juego = None
+
+        # Control del arranque de audio (deferido en web)
+        self._audio_armed = True                 # esperar primer click/tecla en web
+        self._start_ch = None                    # canal del jingle
+        self._wait_channel_end = False           # esperar a que el jingle termine
+
+        # Auto-start en ESCRITORIO (opcional): en web se requiere interacción del usuario
+        if self.AUDIO_OK and self.sonido_inicio and not self.IS_WEB:
+            self._audio_armed = False
+            try:
+                self._start_ch = self.sonido_inicio.play()
+                self._wait_channel_end = True
+            except pygame.error:
+                self._start_ch = None
+                self._wait_channel_end = False
+
+        # Estado inicial del juego
         self.reiniciar_juego()
 
     def reiniciar_juego(self):
@@ -47,16 +93,35 @@ class JuegoPacman:
         self.puntos_totales = self.mapa.contar_puntos_iniciales()
         self.puntos_recolectados = 0
 
-        # Temporizador para alternar entre modos
+        # Temporizador para alternar entre modos (no bloqueante)
         self.tiempo_modo = 0
-        self.intervalos_modos = [7, 20, 7, 20, 5, 20, 5, 20]  # Alterna entre scatter y chase
+        self.intervalos_modos = [7, 20, 7, 20, 5, 20, 5, 20]
         self.indice_modo = 0
         self.modo_actual = 'scatter'
 
-        # Reproducir sonido de inicio
-        self.sonido_inicio.play()
-        # Programar el sonido de los fantasmas para que empiece después del sonido de inicio
-        pygame.time.set_timer(pygame.USEREVENT, int(self.sonido_inicio.get_length() * 1000))
+    def dibujar_pausa(self):
+        # Fondo oscurecido
+        overlay = pygame.Surface((ANCHO_VENTANA, ALTO_VENTANA), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.pantalla.blit(overlay, (0, 0))
+
+        fondo_rect = pygame.Rect(ANCHO_VENTANA // 2 - 150, ALTO_VENTANA // 2 - 100, 300, 250)
+        pygame.draw.rect(self.pantalla, (50, 50, 50), fondo_rect)
+        pygame.draw.rect(self.pantalla, (200, 200, 200), fondo_rect, 3)
+
+        opciones = ["Continuar (ESC)", "Guardar (G)", "Cargar (C)", "Salir (Q)"]
+        for i, opcion in enumerate(opciones):
+            texto = self.fuente_pequenia.render(opcion, True, COLOR_TEXTO)
+            texto_rect = texto.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2 - 60 + i * 40))
+            self.pantalla.blit(texto, texto_rect)
+
+    def programar_modal(self, mensaje, duracion=2.0, color_fondo=(50, 50, 50), color_texto=(255, 255, 255)):
+        self.modal = {
+            "msg": mensaje,
+            "hasta": time.time() + duracion,
+            "cfondo": color_fondo,
+            "ctexto": color_texto,
+        }
 
     def guardar_juego(self):
         estado = {
@@ -70,28 +135,28 @@ class JuegoPacman:
                     "posicion": self.pinky.posicion,
                     "frightened": self.pinky.estado_frightened,
                     "tiempo_restante_frightened": self.pinky.duracion_frightened - (
-                            pygame.time.get_ticks() - self.pinky.inicio_frightened
+                        pygame.time.get_ticks() - self.pinky.inicio_frightened
                     ) if self.pinky.estado_frightened else 0
                 },
                 "blinky": {
                     "posicion": self.blinky.posicion,
                     "frightened": self.blinky.estado_frightened,
                     "tiempo_restante_frightened": self.blinky.duracion_frightened - (
-                            pygame.time.get_ticks() - self.blinky.inicio_frightened
+                        pygame.time.get_ticks() - self.blinky.inicio_frightened
                     ) if self.blinky.estado_frightened else 0
                 },
                 "clyde": {
                     "posicion": self.clyde.posicion,
                     "frightened": self.clyde.estado_frightened,
                     "tiempo_restante_frightened": self.clyde.duracion_frightened - (
-                            pygame.time.get_ticks() - self.clyde.inicio_frightened
+                        pygame.time.get_ticks() - self.clyde.inicio_frightened
                     ) if self.clyde.estado_frightened else 0
                 },
                 "inky": {
                     "posicion": self.inky.posicion,
                     "frightened": self.inky.estado_frightened,
                     "tiempo_restante_frightened": self.inky.duracion_frightened - (
-                            pygame.time.get_ticks() - self.inky.inicio_frightened
+                        pygame.time.get_ticks() - self.inky.inicio_frightened
                     ) if self.inky.estado_frightened else 0
                 }
             },
@@ -127,122 +192,45 @@ class JuegoPacman:
             print("No se encontró ninguna partida guardada.")
             return False
 
-        # Mostrar modal es una funcion generada por IA
-    def mostrar_modal(self, mensaje, duracion=2, color_fondo=(50, 50, 50), color_texto=(0, 255, 0)):
-        """
-        Muestra un mensaje modal en el centro de la pantalla.
-
-        :param mensaje: Texto a mostrar en el modal.
-        :param duracion: Duración en segundos del modal.
-        :param color_fondo: Color de fondo del modal (RGB).
-        :param color_texto: Color del texto del mensaje (RGB).
-        """
-        tiempo_inicial = time.time()
-
-        while time.time() - tiempo_inicial < duracion:
-            # Fondo modal
-            fondo_modal = pygame.Surface((300, 100))
-            fondo_modal.set_alpha(200)  # Fondo semitransparente
-            fondo_modal.fill(color_fondo)  # Color de fondo personalizado
-            rect_modal = fondo_modal.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2))
-
-            # Renderizar el mensaje en el modal
-            texto = self.fuente_pequenia.render(mensaje, True, color_texto)  # Color de texto personalizado
-            texto_rect = texto.get_rect(center=rect_modal.center)
-
-            # Dibujar el modal y el mensaje en pantalla
-            self.pantalla.blit(fondo_modal, rect_modal)
-            self.pantalla.blit(texto, texto_rect)
-            pygame.display.flip()  # Actualizar pantalla
-
-            # Manejar eventos para permitir salir con QUIT sin congelarse
-            for evento in pygame.event.get():
-                if evento.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-
-    # mostrar_menu_pausa es una funcion generada por IA
-    def mostrar_menu_pausa(self):
-        opciones = ["Continuar", "Guardar", "Cargar", "Salir"]
-        seleccion = 0
-        mensaje_exito = None  # Mensaje de éxito temporal
-
-        en_pausa = True
-        while en_pausa:
-            self.pantalla.fill((0, 0, 0))  # Color de fondo negro
-            fondo_rect = pygame.Rect(ANCHO_VENTANA // 2 - 150, ALTO_VENTANA // 2 - 100, 300, 250)
-            pygame.draw.rect(self.pantalla, (50, 50, 50), fondo_rect)  # Fondo del menú de pausa
-            pygame.draw.rect(self.pantalla, (200, 200, 200), fondo_rect, 3)  # Borde del menú de pausa
-
-            # Dibujar opciones
-            for i, opcion in enumerate(opciones):
-                color = COLOR_TEXTO if i != seleccion else (255, 0, 0)  # Rojo si está seleccionado
-                texto = self.fuente_pequenia.render(opcion, True, color)
-                texto_rect = texto.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2 - 60 + i * 40))
-                self.pantalla.blit(texto, texto_rect)
-
-            pygame.display.flip()
-
-            for evento in pygame.event.get():
-                if evento.type == pygame.QUIT:
-                    return False
-                elif evento.type == pygame.KEYDOWN:
-                    if evento.key == pygame.K_ESCAPE:
-                        return True
-                    elif evento.key == pygame.K_UP:
-                        seleccion = (seleccion - 1) % len(opciones)
-                    elif evento.key == pygame.K_DOWN:
-                        seleccion = (seleccion + 1) % len(opciones)
-                    elif evento.key == pygame.K_RETURN:
-                        if opciones[seleccion] == "Continuar":
-                            en_pausa = False
-                        elif opciones[seleccion] == "Guardar":
-                            self.guardar_juego()
-                            mensaje_exito = "Juego guardado con éxito"
-                            self.mostrar_modal(mensaje_exito, color_fondo=(0, 100, 0),
-                                               color_texto=(255, 255, 255))  # Modal verde con texto blanco
-                        elif opciones[seleccion] == "Cargar":
-                            # Utilizar el resultado de cargar_juego para mostrar el mensaje correcto
-                            if self.cargar_juego():
-                                mensaje_exito = "Juego cargado con éxito"
-                                self.mostrar_modal(mensaje_exito, color_fondo=(0, 0, 100),
-                                                   color_texto=(255, 255, 255))  # Modal azul con texto blanco
-                            else:
-                                mensaje_exito = "No se encontró archivo de guardado"
-                                self.mostrar_modal(mensaje_exito, color_fondo=(100, 0, 0),
-                                                   color_texto=(255, 255, 255))  # Modal rojo con texto blanco
-                        elif opciones[seleccion] == "Salir":
-                            return False
-
-            # Limitar el tiempo de visualización del mensaje de éxito
-            if mensaje_exito:
-                pygame.time.delay(300)
-                mensaje_exito = None
-
-        return True
-
     def mostrar_mensaje(self, texto, desplazamiento_y=0, color=(255, 255, 255)):
         fuente = pygame.font.Font(None, 48)
         mensaje = fuente.render(texto, True, color)
-        rect_mensaje = mensaje.get_rect(center=(self.pantalla.get_width() // 2, 
+        rect_mensaje = mensaje.get_rect(center=(self.pantalla.get_width() // 2,
                                                 self.pantalla.get_height() // 2 + desplazamiento_y))
         self.pantalla.blit(mensaje, rect_mensaje)
 
     def actualizar_estado(self):
         if self.puntos_recolectados >= self.puntos_totales:
             self.estado = EstadoJuego.VICTORIA
-            pygame.mixer.music.stop()
-            self.sonido_fin_juego.play()
+            if self.AUDIO_OK:
+                try:
+                    pygame.mixer.music.stop()
+                except pygame.error:
+                    pass
+                try:
+                    if self.sonido_fin_juego is not None:
+                        self.sonido_fin_juego.play()
+                except pygame.error:
+                    pass
 
         if self.pacman.vidas == 0:
             self.estado = EstadoJuego.DERROTA
-            pygame.mixer.music.stop()
-            self.sonido_fin_juego.play()
+            if self.AUDIO_OK:
+                try:
+                    pygame.mixer.music.stop()
+                except pygame.error:
+                    pass
+                try:
+                    if self.sonido_fin_juego is not None:
+                        self.sonido_fin_juego.play()
+                except pygame.error:
+                    pass
 
-        # Cambiar la llamada aquí para pasar activar_modo_frightened
+        # Píldora de poder → frightened
         if self.pacman.recoger_pildora_poder(self.mapa, self.activar_modo_frightened):
             self.activar_modo_frightened(duracion=5000)
 
+        # Alternar modos scatter/chase
         tiempo_actual = time.time()
         if tiempo_actual - self.tiempo_modo >= self.intervalos_modos[self.indice_modo]:
             self.indice_modo = (self.indice_modo + 1) % len(self.intervalos_modos)
@@ -258,14 +246,37 @@ class JuegoPacman:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 return False
-            elif evento.type == pygame.KEYDOWN:
+
+            # 1) Arranque de audio tras la PRIMERA interacción (tecla o click)
+            if evento.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                if self._audio_armed and self.AUDIO_OK:
+                    self._audio_armed = False  # desarmar antes para evitar doble disparo
+                    try:
+                        if self.sonido_inicio is not None:
+                            self._start_ch = self.sonido_inicio.play()
+                            self._wait_channel_end = True
+                    except pygame.error:
+                        self._start_ch = None
+                        self._wait_channel_end = False
+
+            # 2) Manejo de teclas (además del engagement)
+            if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_ESCAPE:
-                    return self.mostrar_menu_pausa()
-                elif evento.key == pygame.K_RETURN and self.estado == EstadoJuego.VICTORIA:
+                    # Toggle pausa
+                    if self.estado in (EstadoJuego.JUGANDO, EstadoJuego.PREPARADO):
+                        self.estado = EstadoJuego.PAUSA
+                    elif self.estado == EstadoJuego.PAUSA:
+                        self.estado = EstadoJuego.JUGANDO
+                elif evento.key == pygame.K_RETURN and self.estado in (EstadoJuego.VICTORIA, EstadoJuego.DERROTA):
                     self.reiniciar_juego()
-            elif evento.type == pygame.USEREVENT:
-                pygame.mixer.music.load(self.sonido_fantasmas)
-                pygame.mixer.music.play(-1)  # Reproducir en bucle
+                elif self.estado == EstadoJuego.PAUSA:
+                    # Atajos en pausa
+                    if evento.key == pygame.K_g:
+                        self.guardar_juego()
+                    elif evento.key == pygame.K_c:
+                        self.cargar_juego()
+                    elif evento.key == pygame.K_q:
+                        return False
         return True
 
     def capturar_movimiento(self):
@@ -282,12 +293,15 @@ class JuegoPacman:
 
     def dibujar_juego(self):
         self.pantalla.fill(COLOR_FONDO)
+
+        # HUD
         texto = self.fuente_pequenia.render(
             f"Puntuación: {self.pacman.puntuacion}   Vidas: {self.pacman.vidas}",
             True, COLOR_TEXTO
         )
         self.pantalla.blit(texto, (20, 10))
 
+        # Mundo y personajes
         self.mapa.dibujar(self.pantalla)
         self.pacman.dibujar(self.pantalla)
         self.pinky.dibujar(self.pantalla)
@@ -295,15 +309,37 @@ class JuegoPacman:
         self.clyde.dibujar(self.pantalla)
         self.inky.dibujar(self.pantalla)
 
-        # Mostrar mensajes según el estado
+        # Mensajes según estado (no bloqueante)
         if self.estado == EstadoJuego.PREPARADO:
             self.mostrar_mensaje("READY!")
         elif self.estado == EstadoJuego.VICTORIA:
             self.mostrar_mensaje("¡VICTORIA!", -40)
-            self.mostrar_mensaje("Presiona ENTER para jugar de nuevo", 40, False)
-        elif self.pacman.vidas <= 0:
-            self.mostrar_mensaje("¡Has Perdido!", -40)
-            self.mostrar_mensaje("Presiona ESC para salir", 40, False)
+            self.mostrar_mensaje("Presiona ENTER para jugar de nuevo", 40, COLOR_TEXTO)
+        elif self.estado == EstadoJuego.DERROTA or self.pacman.vidas <= 0:
+            self.estado = EstadoJuego.DERROTA
+            self.mostrar_mensaje("¡Has Perdido!", -60, color=(255, 0, 0))
+            self.mostrar_mensaje(f"Puntos Obtenidos: {self.pacman.puntuacion}", 0, color=(255, 255, 255))
+            self.mostrar_mensaje("ESC: salir   ENTER: reiniciar", 60, color=(255, 255, 255))
+
+        # Overlay de pausa por encima
+        if self.estado == EstadoJuego.PAUSA:
+            self.dibujar_pausa()
+
+        # Modal no bloqueante
+        if self.modal:
+            if time.time() < self.modal["hasta"]:
+                fondo_modal = pygame.Surface((300, 100))
+                fondo_modal.set_alpha(200)
+                fondo_modal.fill(self.modal["cfondo"])
+                rect_modal = fondo_modal.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2))
+
+                texto = self.fuente_pequenia.render(self.modal["msg"], True, self.modal["ctexto"])
+                texto_rect = texto.get_rect(center=rect_modal.center)
+
+                self.pantalla.blit(fondo_modal, rect_modal)
+                self.pantalla.blit(texto, texto_rect)
+            else:
+                self.modal = None
 
     def activar_modo_frightened(self, duracion=300):
         duracion = 7000
@@ -324,26 +360,9 @@ class JuegoPacman:
         self.clyde.desactivar_scatter()
         self.inky.desactivar_scatter()
 
+    # (Ya no se usa una pantalla de derrota bloqueante)
     def mostrar_pantalla_derrota(self):
-        # Crear pantalla negra
-        self.pantalla.fill((0, 0, 0))
-
-        # Mensajes de derrota
-        self.mostrar_mensaje("¡Has Perdido!", -60, color=(255, 0, 0))
-        self.mostrar_mensaje(f"Puntos Obtenidos: {self.pacman.puntos_recolectados}", 0, color=(255, 255, 255))
-        self.mostrar_mensaje("Presiona ESC para salir", 60, color=(255, 255, 255))
-
-        # Actualizar display
-        pygame.display.flip()
-
-        # Esperar hasta que se presione ESC
-        esperando = True
-        while esperando:
-            for evento in pygame.event.get():
-                if evento.type == pygame.QUIT:
-                    esperando = False
-                elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
-                    esperando = False
+        pass
 
     def ejecutar(self):
         jugando = True
@@ -352,11 +371,9 @@ class JuegoPacman:
         while jugando:
             jugando = self.manejar_eventos()
 
-            # Verificar si se debe mostrar pantalla de derrota
+            # Verificar derrota
             if self.pacman.vidas <= 0:
                 self.estado = EstadoJuego.DERROTA
-                self.mostrar_pantalla_derrota()
-                break  # Salir del bucle del juego después de mostrar la pantalla
 
             movimiento = self.capturar_movimiento()
 
@@ -364,13 +381,12 @@ class JuegoPacman:
                 if time.time() - self.tiempo_inicio >= TIEMPO_INICIO_JUEGO:
                     self.estado = EstadoJuego.JUGANDO
 
-            # Mover PacMan solo si hay movimiento detectado
+            # Lógica de juego
             if self.estado == EstadoJuego.JUGANDO and movimiento:
                 self.pacman.mover(movimiento, self.mapa, self.activar_modo_frightened, self.fantasmas)
                 self.puntos_recolectados = self.pacman.puntos_recolectados
                 self.actualizar_estado()
 
-            # Generar fruta ocasionalmente durante el juego
             if self.estado == EstadoJuego.JUGANDO:
                 self.contador_fruta += 1
                 if self.contador_fruta > 300:
@@ -383,24 +399,100 @@ class JuegoPacman:
                     self.clyde.mover(self.pacman, self.mapa)
                     self.inky.mover(self.pacman, self.blinky, self.mapa)
 
+                # Actualizaciones de estado
                 self.pinky.actualizar_frightened()
                 self.blinky.actualizar_frightened()
                 self.clyde.actualizar_frightened()
                 self.inky.actualizar_frightened()
 
-                # Verificar colisión entre los fantasmas y PacMan
+                # Colisiones
                 self.pinky.verificar_colision_con_pacman(self.pacman)
                 self.blinky.verificar_colision_con_pacman(self.pacman)
                 self.clyde.verificar_colision_con_pacman(self.pacman)
                 self.inky.verificar_colision_con_pacman(self.pacman)
 
-            # Dibujar el estado actual del juego
+            # Dibujar
             self.dibujar_juego()
+
+            # Cuando el jingle termina, arrancar música de fantasmas (sin timer)
+            if self.AUDIO_OK and self._wait_channel_end:
+                ready = (self._start_ch is None) or (not self._start_ch.get_busy())
+                if ready:
+                    try:
+                        pygame.mixer.music.load(self.sonido_fantasmas)
+                        pygame.mixer.music.play(-1)
+                    except pygame.error:
+                        pass
+                    self._wait_channel_end = False
+
             pygame.display.flip()
             reloj.tick(FPS)
 
         pygame.quit()
 
-if __name__ == "__main__":
+
+async def main():
     juego = JuegoPacman()
-    juego.ejecutar()
+    reloj = pygame.time.Clock()
+
+    while True:
+        # Eventos
+        if not juego.manejar_eventos():
+            break
+
+        # Derrota
+        if juego.pacman.vidas <= 0:
+            juego.estado = EstadoJuego.DERROTA
+
+        # Movimiento
+        movimiento = juego.capturar_movimiento()
+
+        if juego.estado == EstadoJuego.PREPARADO:
+            if time.time() - juego.tiempo_inicio >= TIEMPO_INICIO_JUEGO:
+                juego.estado = EstadoJuego.JUGANDO
+
+        if juego.estado == EstadoJuego.JUGANDO and movimiento:
+            juego.pacman.mover(movimiento, juego.mapa, juego.activar_modo_frightened, juego.fantasmas)
+            juego.puntos_recolectados = juego.pacman.puntos_recolectados
+            juego.actualizar_estado()
+
+        # Lógica de juego (no bloqueante)
+        if juego.estado == EstadoJuego.JUGANDO:
+            juego.contador_fruta += 1
+            if juego.contador_fruta > 300:
+                juego.mapa.generar_fruta_aleatoria()
+                juego.contador_fruta = 0
+
+            if juego.contador_fruta % 2 == 0:
+                juego.pinky.mover(juego.pacman, juego.mapa)
+                juego.blinky.mover(juego.pacman, juego.mapa)
+                juego.clyde.mover(juego.pacman, juego.mapa)
+                juego.inky.mover(juego.pacman, juego.blinky, juego.mapa)
+
+            for fantasma in juego.fantasmas:
+                fantasma.actualizar_frightened()
+                fantasma.verificar_colision_con_pacman(juego.pacman)
+
+        # Dibujar
+        juego.dibujar_juego()
+
+        # Cuando el jingle termina, arrancar música de fantasmas (sin timer)
+        if juego.AUDIO_OK and juego._wait_channel_end:
+            ready = (juego._start_ch is None) or (not juego._start_ch.get_busy())
+            if ready:
+                try:
+                    pygame.mixer.music.load(juego.sonido_fantasmas)
+                    pygame.mixer.music.play(-1)
+                except pygame.error:
+                    pass
+                juego._wait_channel_end = False
+
+        pygame.display.flip()
+        reloj.tick(FPS)
+        await asyncio.sleep(0)
+
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
