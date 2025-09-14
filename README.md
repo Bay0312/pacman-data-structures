@@ -270,29 +270,7 @@ pygame==2.*
 pygbag==0.9.2
 ```
 
-### 🎨 Estilo de Código
-```bash
-# (Opcional) Herramientas de formateo
-pip install ruff black pre-commit
-```
-
 ---
-
-## 🗺️ Roadmap
-
-<div align="center">
-
-| Estado | Característica |
-|--------|----------------|
-| ✅ | IA básica con A* |
-| ✅ | Sistema de guardado |
-| ✅ | Deploy automático |
-| 🔄 | Mejora de HUD y marcadores |
-| 📋 | Niveles múltiples |
-| 📋 | Optimización intersecciones |
-| 📋 | Sistema audio mejorado |
-
-</div>
 
 ### 🎨 Recursos
 - **Gráficos:** Creación original 
