@@ -5,7 +5,6 @@
 [![Demo Web](https://img.shields.io/badge/🌐_Demo-Jugar_Ahora-4CAF50?style=for-the-badge)](https://bay0312.github.io/pacman-data-structures/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat&logo=python)](https://python.org)
 [![Pygame](https://img.shields.io/badge/Pygame-2.0+-green?style=flat&logo=python)](https://pygame.org)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](LICENSE)
 
 ---
 
